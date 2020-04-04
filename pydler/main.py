@@ -23,10 +23,11 @@ DL_DIR = config.DL_DIR
 def ydl_hook(d):
     print(d['status'])
 
-def download(url, dl_dir = ''):
+def download(queue_name, dl_dir = ''):
     '''下载地址内容'''
-    #  config.YDL_OPTS['progress_hooks'] = [ydl_hook]
-    #  YDL_ARCHIVE=f'{HOME}/.pydler-archive'
+    url = get_last_url(queue_name)
+    if not url:
+        return
     if not dl_dir:
         dl_dir = DL_DIR
     ydl_opts = {
@@ -84,24 +85,11 @@ def start(url: str = '', dl_dir: str = '', queue_name: str = ''):
         queue_name = PYDLER_QUEUE
     if not dl_dir:
         dl_dir = DL_DIR
-    #  if url:
-        #  pool.apply_async(download, (url,))
+
     pool = mp.Pool(processes=4)
 
-    #  for u in [
-        #  'https://www.youtube.com/watch?v=COMHDRqAvYE',
-        #  'https://www.youtube.com/watch?v=jOxzAsnx9-0',
-        #  'https://www.youtube.com/watch?v=6d0v2InyN_w',
-        #  ]:
-        #  pool.apply_async(download, (u,))
-
     while True:
-        u = get_last_url(queue_name)
-        if u:
-            pool.apply_async(download, (u, dl_dir))
-
-
+        pool.apply_async(download, (queue_name, dl_dir))
 
 if __name__ == "__main__":
     app()
-    
