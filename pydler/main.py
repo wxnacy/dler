@@ -23,10 +23,12 @@ DL_DIR = config.DL_DIR
 def ydl_hook(d):
     print(d['status'])
 
-def download(url, dl_dir = DL_DIR):
+def download(url, dl_dir = ''):
     '''下载地址内容'''
     #  config.YDL_OPTS['progress_hooks'] = [ydl_hook]
     #  YDL_ARCHIVE=f'{HOME}/.pydler-archive'
+    if not dl_dir:
+        dl_dir = DL_DIR
     ydl_opts = {
         "proxy": "127.0.0.1:1080",
         "outtmpl": f"{dl_dir}/%(title)s.%(ext)s"
@@ -42,10 +44,9 @@ def add(url: str, queue_name: str = ''):
     insert_msg = f'{url}\n'
     filename = f'{config.QUEUE_DIR}/{time.time()}-{url}'
     filename = f'{config.QUEUE_DIR}/{time.time()}'
-    if queue_name:
-        PYDLER_QUEUE = queue_name
-    print(PYDLER_QUEUE)
-    db.rpush(PYDLER_QUEUE, url)
+    if not queue_name:
+        queue_name = PYDLER_QUEUE
+    db.rpush(queue_name, url)
     config.echo(f'添加地址 {url} 到队列中，可以使用 `pydler start` 开始任务')
 
 def get_last_url(queue_name = PYDLER_QUEUE):
@@ -79,10 +80,10 @@ def get_queue():
 def start(url: str = '', dl_dir: str = '', queue_name: str = ''):
     config.echo('Hello World')
     config.echo(url)
-    if dl_dir:
-        DL_DIR = dl_dir
-    if queue_name:
-        PYDLER_QUEUE = queue_name
+    if not queue_name:
+        queue_name = PYDLER_QUEUE
+    if not dl_dir:
+        dl_dir = DL_DIR
     #  if url:
         #  pool.apply_async(download, (url,))
     pool = mp.Pool(processes=4)
@@ -95,9 +96,9 @@ def start(url: str = '', dl_dir: str = '', queue_name: str = ''):
         #  pool.apply_async(download, (u,))
 
     while True:
-        u = get_last_url(PYDLER_QUEUE)
+        u = get_last_url(queue_name)
         if u:
-            pool.apply_async(download, (u,DL_DIR))
+            pool.apply_async(download, (u, dl_dir))
 
 
 
