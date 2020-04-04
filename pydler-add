@@ -1,0 +1,2 @@
+
+python pydler/main.py add --queue-name pydler_queue_test $@
