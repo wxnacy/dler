@@ -4,6 +4,7 @@
 # Description:
 
 from pydler import config
+from pydler import downloader
 from pydler.config import celery
 
 import youtube_dl
@@ -12,19 +13,22 @@ PYDLER_QUEUE = 'pydler_queue'
 
 DL_DIR = config.DL_DIR
 
+def download_yt(url):
+    ydl_opts = {
+        "proxy": "127.0.0.1:1080",
+        "outtmpl": f"{DL_DIR}/%(title)s.%(ext)s"
+    }
+    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+        res = ydl.download([url])
+
 @celery.task()
 def download_url(url, dl_dir = ''):
     '''下载地址内容'''
-    if not dl_dir:
-        dl_dir = DL_DIR
-    ydl_opts = {
-        "proxy": "127.0.0.1:1080",
-        "outtmpl": f"{dl_dir}/%(title)s.%(ext)s"
-    }
-    print(dl_dir)
-    print(PYDLER_QUEUE)
-    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-        res = ydl.download([url])
+    if 'mmxzxl1' in url:
+        url = downloader.parse_maomi_url(url)
+
+    download_yt(url)
+
 
 
 

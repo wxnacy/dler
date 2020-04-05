@@ -13,11 +13,11 @@ CONF_DIR = f'{HOME}/.config/pydler'
 ARCHIVE = f'{CONF_DIR}/archive'
 QUEUE = f'{CONF_DIR}/queue'
 QUEUE_DIR = f'{CONF_DIR}/queue_files'
-DL_DIR=f'{HOME}/Downloads'
+DL_DIR= os.getenv("PYDLER_DLDIR") or f'{HOME}/Downloads'
 
 REDIS_HOST = '127.0.0.1'
 REDIS_PORT = 6379
-REDIS_DB = 6
+REDIS_DB = os.getenv("PYDLER_REDIS_DB") or 6
 
 
 def init():

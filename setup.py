@@ -14,7 +14,7 @@ from setuptools import find_packages, setup, Command
 
 # Package meta-data.
 NAME = 'pydler'
-DESCRIPTION = 'Github Object Storage'
+DESCRIPTION = 'python video downloader'
 URL = 'https://github.com/wxnacy/pydler'
 EMAIL = 'wxnacy@gmail.com'
 AUTHOR = 'wxnacy'
@@ -25,7 +25,8 @@ VERSION = None
 REQUIRED = [
     # 'requests', 'maya', 'records',
     'typer>=0.1.1',
-    'youtube_dl>=2020.3.24'
+    'youtube_dl>=2020.3.24',
+    'celery[redis]>=4.4.2'
 ]
 
 # What packages are optional?
