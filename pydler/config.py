@@ -3,6 +3,7 @@
 # Author: wxnacy(wxnacy@gmail.com)
 # Description:
 
+from celery import Celery
 import typer
 import os
 import redis
@@ -28,9 +29,27 @@ def init():
     if not os.path.exists(QUEUE_DIR):
         os.makedirs(QUEUE_DIR)
 
+
+def make_celery():
+    conf = {
+        'CELERY_BROKER_URL': 'redis://localhost:6379',
+        'CELERY_RESULT_BACKEND': 'redis://localhost:6379'
+    }
+    celery = Celery('pydler', broker=conf['CELERY_BROKER_URL'])
+    celery.conf.update(conf)
+    #  TaskBase = celery.Task
+    #  class ContextTask(TaskBase):
+        #  abstract = True
+        #  def __call__(self, *args, **kwargs):
+            #  with app.app_context():
+                #  return TaskBase.__call__(self, *args, **kwargs)
+    #  celery.Task = ContextTask
+    return celery
+
 init()
 
 echo = typer.echo
 
 pool = redis.ConnectionPool(host='127.0.0.1', port=6379, db=0)
 db = redis.Redis(connection_pool=pool)
+celery = make_celery()

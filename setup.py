@@ -114,6 +114,7 @@ setup(
     entry_points={
         'console_scripts': [
             'pydler=pydler.main:app',
+            'pydler-server=pydler.server',
         ],
     },
     install_requires=REQUIRED,

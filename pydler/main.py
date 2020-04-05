@@ -5,6 +5,8 @@
 
 from pydler import config
 from pydler.config import db
+from pydler.config import celery
+from pydler import tasks
 
 import multiprocessing as mp
 
@@ -39,15 +41,29 @@ def download(queue_name, dl_dir = ''):
     with youtube_dl.YoutubeDL(ydl_opts) as ydl:
         res = ydl.download([url])
 
+@celery.task()
+def download_url(url, dl_dir = ''):
+    '''下载地址内容'''
+    if not dl_dir:
+        dl_dir = DL_DIR
+    ydl_opts = {
+        "proxy": "127.0.0.1:1080",
+        "outtmpl": f"{dl_dir}/%(title)s.%(ext)s"
+    }
+    print(dl_dir)
+    print(PYDLER_QUEUE)
+    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+        res = ydl.download([url])
 
 @app.command()
 def add(url: str, queue_name: str = ''):
-    insert_msg = f'{url}\n'
-    filename = f'{config.QUEUE_DIR}/{time.time()}-{url}'
-    filename = f'{config.QUEUE_DIR}/{time.time()}'
-    if not queue_name:
-        queue_name = PYDLER_QUEUE
-    db.rpush(queue_name, url)
+    #  insert_msg = f'{url}\n'
+    #  filename = f'{config.QUEUE_DIR}/{time.time()}-{url}'
+    #  filename = f'{config.QUEUE_DIR}/{time.time()}'
+    #  if not queue_name:
+        #  queue_name = PYDLER_QUEUE
+    #  db.rpush(queue_name, url)
+    tasks.download_url.delay('https://www.youtube.com/watch?v=j8ULt1P9rxY')
     config.echo(f'添加地址 {url} 到队列中，可以使用 `pydler start` 开始任务')
 
 def get_last_url(queue_name = PYDLER_QUEUE):
@@ -76,20 +92,26 @@ def get_queue():
         res.append(r.decode())
     return res
 
-
 @app.command()
-def start(url: str = '', dl_dir: str = '', queue_name: str = ''):
+def start():
     config.echo('Hello World')
-    config.echo(url)
-    if not queue_name:
-        queue_name = PYDLER_QUEUE
-    if not dl_dir:
-        dl_dir = DL_DIR
+    celery.worker_main()
 
-    pool = mp.Pool(processes=4)
+#  @app.command()
+#  def start(url: str = '', dl_dir: str = '', queue_name: str = ''):
+    #  config.echo('Hello World')
+    #  celery.worker_main()
+    #  config.echo(url)
+    #  if not queue_name:
+        #  queue_name = PYDLER_QUEUE
+    #  if not dl_dir:
+        #  dl_dir = DL_DIR
 
-    while True:
-        pool.apply_async(download, (queue_name, dl_dir))
+    #  pool = mp.Pool(processes=4)
+
+    #  while True:
+        #  pool.apply_async(download, (queue_name, dl_dir))
 
 if __name__ == "__main__":
+    #  celery.worker_main()
     app()
