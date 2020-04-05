@@ -6,5 +6,8 @@
 from pydler.config import celery
 from pydler import tasks
 
-if __name__ == "__main__":
+def run():
     celery.worker_main()
+
+if __name__ == "__main__":
+    run()

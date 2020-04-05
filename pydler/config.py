@@ -15,12 +15,10 @@ QUEUE = f'{CONF_DIR}/queue'
 QUEUE_DIR = f'{CONF_DIR}/queue_files'
 DL_DIR=f'{HOME}/Downloads'
 
-#  YDL_ARCHIVE=f'{HOME}/.pydler-archive'
-#  YDL_OPTS = {
-    #  "proxy": "127.0.0.1:1080",
-    #  #  "download_archive": YDL_ARCHIVE,
-    #  "outtmpl": f"{DL_DIR}/%(title)s.%(ext)s"
-#  }
+REDIS_HOST = '127.0.0.1'
+REDIS_PORT = 6379
+REDIS_DB = 6
+
 
 def init():
     '''初始化文件和配置'''
@@ -32,24 +30,16 @@ def init():
 
 def make_celery():
     conf = {
-        'CELERY_BROKER_URL': 'redis://localhost:6379',
-        'CELERY_RESULT_BACKEND': 'redis://localhost:6379'
+        'CELERY_BROKER_URL': f'redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}',
+        'CELERY_RESULT_BACKEND': f'redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}'
     }
     celery = Celery('pydler', broker=conf['CELERY_BROKER_URL'])
     celery.conf.update(conf)
-    #  TaskBase = celery.Task
-    #  class ContextTask(TaskBase):
-        #  abstract = True
-        #  def __call__(self, *args, **kwargs):
-            #  with app.app_context():
-                #  return TaskBase.__call__(self, *args, **kwargs)
-    #  celery.Task = ContextTask
     return celery
 
 init()
 
 echo = typer.echo
-
-pool = redis.ConnectionPool(host='127.0.0.1', port=6379, db=0)
+pool = redis.ConnectionPool(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB)
 db = redis.Redis(connection_pool=pool)
 celery = make_celery()

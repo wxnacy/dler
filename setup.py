@@ -94,8 +94,6 @@ class UploadCommand(Command):
         
         sys.exit()
 
-packages = find_packages(exclude=["tests", "*.tests", "*.tests.*", "tests.*"])
-print(packages)
 # Where the magic happens:
 setup(
     name=NAME,
@@ -113,8 +111,8 @@ setup(
 
     entry_points={
         'console_scripts': [
-            'pydler=pydler.main:app',
-            'pydler-server=pydler.server',
+            'pydler=pydler.run:app',
+            'pydler-server=pydler.server:run',
         ],
     },
     install_requires=REQUIRED,
