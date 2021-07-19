@@ -24,9 +24,10 @@ VERSION = None
 # What packages are required for this module to be executed?
 REQUIRED = [
     # 'requests', 'maya', 'records',
-    'typer>=0.1.1',
-    'youtube_dl>=2020.3.24',
-    'celery[redis]>=4.4.2'
+    #  'typer>=0.1.1',
+    #  'youtube_dl>=2020.3.24',
+    'wpy',
+    #  'celery[redis]>=4.4.2'
 ]
 
 # What packages are optional?
@@ -112,6 +113,8 @@ setup(
 
     entry_points={
         'console_scripts': [
+            'dladd=pydler.cli.taskadd:main',
+            'dl=pydler.cli.download:main',
             'pydler=pydler.run:app',
             'pydler-server=pydler.server:run',
         ],
