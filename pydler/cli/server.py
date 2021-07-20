@@ -4,13 +4,14 @@
 """
 
 """
-import json
-import requests
-import os
-import logging
-import gevent
 from gevent import monkey
 monkey.patch_all()
+#  monkey.patch_all(ssl=False)
+import json
+import os
+import logging
+#  import gevent
+import requests
 from enum import Enum
 
 from flask import Flask
@@ -33,7 +34,7 @@ class CustomerFilter(logging.Filter):
         return True
 
 logging.basicConfig(
-    filename='/tmp/wpy.log',
+    #  filename='/tmp/wpy.log',
     format="[%(asctime)s] [%(levelname)-5s] [%(filename)-20s] %(message)s",
     level=logging.DEBUG
 )

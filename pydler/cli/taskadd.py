@@ -11,5 +11,3 @@ def main():
     import sys
     url = sys.argv[1:][0]
     M3u8Downloader.add_task(url)
-
-    

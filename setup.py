@@ -30,6 +30,7 @@ REQUIRED = [
     'flask',
     'requests',
     'gevent',
+    'gunicorn',
     #  'celery[redis]>=4.4.2'
 ]
 
@@ -118,6 +119,7 @@ setup(
         'console_scripts': [
             'dladd=pydler.cli.taskadd:main',
             'dl=pydler.cli.download:main',
+            'dlm3=pydler.cli.download_m3u8:main',
             'dlserver=pydler.cli.server:run_server',
             'pydler=pydler.run:app',
             'pydler-server=pydler.server:run',
