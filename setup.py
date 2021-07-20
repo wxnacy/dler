@@ -27,6 +27,9 @@ REQUIRED = [
     #  'typer>=0.1.1',
     #  'youtube_dl>=2020.3.24',
     'wpy',
+    'flask',
+    'requests',
+    'gevent',
     #  'celery[redis]>=4.4.2'
 ]
 
@@ -115,6 +118,7 @@ setup(
         'console_scripts': [
             'dladd=pydler.cli.taskadd:main',
             'dl=pydler.cli.download:main',
+            'dlserver=pydler.cli.server:run_server',
             'pydler=pydler.run:app',
             'pydler-server=pydler.server:run',
         ],
