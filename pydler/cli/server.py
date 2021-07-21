@@ -10,7 +10,7 @@ monkey.patch_all()
 import json
 import os
 import logging
-#  import gevent
+import gevent
 import requests
 from enum import Enum
 
@@ -20,6 +20,8 @@ from flask import request
 from wpy.db import FileStorage
 from wpy.tools import randoms
 import logging
+
+from pydler.downloader.m3u8_downloader import M3u8Downloader
 
 app = Flask(__name__)
 
@@ -73,6 +75,9 @@ def download(url, path):
 
 @app.route('/api/task/<string:task_id>/sub_task/<string:sub_id>/download')
 def sub_task_download(task_id, sub_id):
+    downloader = M3u8Downloader(task_id)
+    gevent.spawn(downloader.download_sub_task, sub_id)
+    return 'success'
     sub_task_table = db.get_table('sub_task-{}'.format(task_id))
 
     doc = sub_task_table.find_one_by_id(sub_id)

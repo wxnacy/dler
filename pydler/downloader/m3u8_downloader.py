@@ -10,31 +10,23 @@ import m3u8
 import os
 import requests
 from wpy.db import FileStorage
-#  from gevent import monkey
-#  monkey.patch_all()
-
-#  import gevent
 import time
 
 from enum import Enum
 
 from wpy.downloader.progress import progress, done_event
 from pydler.common.loggers import create_logger
+from pydler.common import constants
 
 from .models import Task
 from .models import SubTask
-
-class TaskStatus(Enum):
-    WAITING = 'waiting'
-    SUCCESS = 'success'
-    FAILED = 'failed'
-    PROCESS = 'process'
-    STOP = 'stop'
+from .enum import TaskStatus
 
 class M3u8Downloader(object):
     logger = create_logger('M3u8Downloader')
     done = False
     success_count = 0
+    inc_count = 0
     process_count = 0
     total_count = 0
     db = FileStorage('~/Downloads/db').get_db('m3u8')
@@ -46,8 +38,6 @@ class M3u8Downloader(object):
     task_id = ''
 
     def __init__(self, task_id):
-        #  self.pool = mp.Pool(processes = 4)
-        #  self.url = url
         self.task_id = task_id
         self.sub_task_table = self.db.get_table('sub_task-{}'.format(self.task_id))
         self.start_time = time.time()
@@ -103,10 +93,13 @@ class M3u8Downloader(object):
                 ts_url = os.path.join(m3.base_uri, ts_url)
             print(i, ts_url)
             _path = os.path.join(download_root, os.path.basename(ts_url))
+            status = TaskStatus.WAITING.value
+            if os.path.exists(_path):
+                status = TaskStatus.SUCCESS.value
             doc = {
                 "download_url": ts_url,
                 "download_path": _path,
-                "status": TaskStatus.WAITING.value
+                "status": status
             }
             sub_task_table.insert(doc)
         return _id
@@ -115,19 +108,26 @@ class M3u8Downloader(object):
         self.task_table.update({ "_id": self.task_id },
                 { "status": TaskStatus.PROCESS.value })
         progress.start_task(self.progress_task_id)
-        self.success_count = SubTask.count_status(self.task_id, TaskStatus.SUCCESS.value) or 0
-        progress.update(self.progress_task_id, advance = self.success_count)
+        self._update_success_count()
+        #  self.success_count = SubTask.count_status(self.task_id, TaskStatus.SUCCESS.value) or 0
+        #  progress.update(self.progress_task_id, advance = self.success_count)
         while not self._check_done():
             if self._is_continue():
                 continue
-            doc = self.sub_task_table.find_one({ "status": TaskStatus.WAITING.value })
-            if not doc:
+            docs = SubTask.find_not_success_items(self.task_id)
+            if not docs:
                 continue
-            _id = doc['_id']
+            doc = docs[0]
+            _id = doc._id
+            # 查看任务是否已经成功
+            if doc.is_success():
+                self._update_sub_task_status(_id, TaskStatus.SUCCESS.value)
+                continue
             self._update_sub_task_status(_id, TaskStatus.PROCESS.value)
 
-            with ThreadPoolExecutor(max_workers=8) as pool:
-                pool.submit(self._download_by_web,  _id)
+            #  with ThreadPoolExecutor(max_workers=8) as pool:
+                #  pool.submit(self._download_by_web,  _id)
+            self._download_by_web(_id)
 
         if self.done:
             self.task_table.update({ "_id": self.task_id },
@@ -135,10 +135,13 @@ class M3u8Downloader(object):
 
     def _download_by_web(self, sub_id):
         requests.get(
-            'http://0.0.0.0:5000/api/task/{}/sub_task/{}/download'.format(
+            'http://0.0.0.0:{}/api/task/{}/sub_task/{}/download'.format(
+                constants.SERVER_PORT,
                 self.task_id, sub_id
         ))
-        progress.update(self.progress_task_id, advance = 1)
+
+    def download_sub_task(self, sub_id):
+        return self._download_by_id(sub_id)
 
     def _download_by_id(self, sub_id):
         doc = self.sub_task_table.find_one_by_id(sub_id)
@@ -153,11 +156,11 @@ class M3u8Downloader(object):
                 { "status": status, "error": str(e) })
         if flag:
             status = TaskStatus.SUCCESS.value
-            progress.update(self.progress_task_id, advance = 1)
+            #  progress.update(self.progress_task_id, advance = 1)
         else:
             status = TaskStatus.FAILED.value
         self._update_sub_task_status(sub_id, status)
-        self.success_count = self.sub_task_table.count({ "status": TaskStatus.SUCCESS.value })
+        return status
 
     def _download(self, url, path):
         headers = {
@@ -188,7 +191,16 @@ class M3u8Downloader(object):
             return True
         return False
 
+    def _update_success_count(self):
+        success_count = SubTask.count_status(
+            self.task_id, TaskStatus.SUCCESS.value) or 0
+
+        self.inc_count = success_count - self.success_count
+        self.success_count = success_count
+        progress.update(self.progress_task_id, advance = self.inc_count)
+
     def _check_done(self):
+        self._update_success_count()
         if self.success_count >= self.total_count:
             self.status = TaskStatus.SUCCESS.value
         else:
@@ -202,13 +214,12 @@ class M3u8Downloader(object):
             self.task_table.update({ "_id": self.task_id },
                 { "status": self.status })
 
-        done = self.status in (TaskStatus.SUCCESS.value,
+        self.done = self.status in (TaskStatus.SUCCESS.value,
                 TaskStatus.FAILED.value, TaskStatus.STOP.value)
-        if done:
+        if self.done:
             self.task_table.update({ "_id": self.task_id },
                 { "status": self.status })
-        return done
-
+        return self.done
 
 def start(task_id):
     downloader = M3u8Downloader(task_id)

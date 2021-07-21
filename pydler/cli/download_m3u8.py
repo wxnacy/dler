@@ -17,6 +17,8 @@ def start(task_id):
 def main():
     import sys
     url = sys.argv[1:][0]
-    task_id = M3u8Downloader.add_task(url)
+    task_id = url
+    if url.startswith('http'):
+        task_id = M3u8Downloader.add_task(url)
     downloader = M3u8Downloader(task_id)
     downloader.start()

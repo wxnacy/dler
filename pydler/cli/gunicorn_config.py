@@ -1,18 +1,20 @@
 # 多进程
 import multiprocessing
 
+from pydler.common import constants
+
 """gunicorn+gevent 的配置文件"""
 
 
 # 预加载资源
 preload_app = True
 # 绑定 ip + 端口
-bind = "0.0.0.0:5000"
+bind = "0.0.0.0:{}".format(constants.SERVER_PORT)
 # 进程数 = cup数量 * 2 + 1
-workers = multiprocessing.cpu_count() * 2 + 1
+workers = multiprocessing.cpu_count() * 4 + 1
 
 # 线程数 = cup数量 * 2
-threads = multiprocessing.cpu_count() * 2
+threads = multiprocessing.cpu_count() * 4
 
 # 等待队列最大长度,超过这个长度的链接将被拒绝连接
 backlog = 2048

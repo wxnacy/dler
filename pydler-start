@@ -1,1 +1,0 @@
-python pydler/main.py start --queue-name pydler_queue_test --dl-dir ./tmp $@

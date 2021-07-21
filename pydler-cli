@@ -1,7 +1,0 @@
-
-source .env
-rm tmp/*
-python pydler/run.py add https://www.youtube.com/watch?v=COMHDRqAvYE
-python pydler/run.py add https://www.youtube.com/watch?v=jOxzAsnx9-0
-python pydler/run.py add https://www.youtube.com/watch?v=6d0v2InyN_w
-# python pydler/run.py $@
