@@ -3,7 +3,7 @@
 # Author: wxnacy(wxnacy@gmail.com)
 # Description:
 
-from pydler import __version__
+from dler import __version__
 
 if __name__ == "__main__":
     print(__version__.__version__)
