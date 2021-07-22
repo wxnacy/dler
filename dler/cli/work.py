@@ -77,6 +77,14 @@ def _main():
             run_in_shell(task._id)
             #  pool.apply_async(start, (downloaders, task._id,))
 
+def find_not_worker():
+    tasks = Task.db_col().find()
+    for task in tasks:
+        task = Task(**task)
+        if task._id not in workers:
+            return task
+    return None
+
 def main():
     import sys
     import time
@@ -84,16 +92,9 @@ def main():
         if done_event.is_set():
             Task.db_col().update({}, { "status": TaskStatus.WAITING.value })
             break
-        reload_download()
-        if is_continue():
-            time.sleep(2)
-            continue
-        task = find_waiting_task()
+        task = find_not_worker()
         if not task:
             continue
-        if task._id in workers:
-            continue
         logger.info('task %s add', task._id)
-        Task.update_status(task._id, TaskStatus.PROCESS.value)
         workers.add(task._id)
         run_in_shell(task._id)

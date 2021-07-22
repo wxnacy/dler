@@ -46,8 +46,6 @@ class M3u8Downloader(object):
 
     def _build(self):
         self.total_count = len(self.sub_task_table.find({}))
-        task = Task.db_col().find_one_by_id(self.task_id)
-        self.m3 = m3u8.load(task.get("url"))
 
     def wait_start(self):
         while self.status != TaskStatus.PROCESS.value:
@@ -87,20 +85,11 @@ class M3u8Downloader(object):
     @classmethod
     def add_task(cls, url):
         _id = cls._generate_task_id(url)
-        doc = cls.task_table.find_one_by_id(_id)
-        task = {
-            "url": url,
-            "status": TaskStatus.WAITING.value,
-        }
-        if doc:
-            cls.task_table.update({ "_id": _id }, task)
-        else:
-            task['_id'] = _id
-            cls.task_table.insert(task)
         sub_task_table = cls.db.get_table('sub_task-{}'.format(_id))
         sub_task_table.drop()
         download_root = os.path.join(cls.download_root, _id)
 
+        print('insert sub_task')
         doc = {
             "download_url": url,
             "download_path": os.path.join(download_root, os.path.basename(url)),
@@ -123,6 +112,18 @@ class M3u8Downloader(object):
                 "status": status
             }
             sub_task_table.insert(doc)
+        # 最后插入任务
+        print('insert task')
+        doc = cls.task_table.find_one_by_id(_id)
+        task = {
+            "url": url,
+            "status": TaskStatus.WAITING.value,
+        }
+        if doc:
+            cls.task_table.update({ "_id": _id }, task)
+        else:
+            task['_id'] = _id
+            cls.task_table.insert(task)
         return _id
 
     def run(self):
@@ -151,9 +152,9 @@ class M3u8Downloader(object):
 
             self.async_download_sub_task(_id)
 
-        if self.done:
-            self.task_table.update({ "_id": self.task_id },
-                { "status": TaskStatus.SUCCESS.value })
+        #  if self.done:
+            #  self.task_table.update({ "_id": self.task_id },
+                #  { "status": TaskStatus.SUCCESS.value })
 
     def async_download_sub_task(self, sub_id):
         self._update_sub_task_status(sub_id, TaskStatus.PROCESS.value)
@@ -247,19 +248,19 @@ class M3u8Downloader(object):
                 { "status": self.status })
         return self.done
 
-def start(task_id):
-    downloader = M3u8Downloader(task_id)
-    downloader.start()
+#  def start(task_id):
+    #  downloader = M3u8Downloader(task_id)
+    #  downloader.start()
 
-if __name__ == "__main__":
-    import random
-    url = 'https://hls.videocc.net/f8f97d17d0/d/f8f97d17d0a21f1a1d84d214c5dcbfdd_1.m3u8'
-    #  M3u8Downloader.add_task(url)
-    task_table = FileStorage('~/Downloads/db').get_db('m3u8').get_table('task')
-    tasks = task_table.find()
-    task_ids = [ o.get("_id") for o in tasks ]
-    print(task_ids)
-    with ThreadPoolExecutor(max_workers=4) as pool:
-        for task_id in task_ids:
-            start(task_id)
+#  if __name__ == "__main__":
+    #  import random
+    #  url = 'https://hls.videocc.net/f8f97d17d0/d/f8f97d17d0a21f1a1d84d214c5dcbfdd_1.m3u8'
+    #  #  M3u8Downloader.add_task(url)
+    #  task_table = FileStorage('~/Downloads/db').get_db('m3u8').get_table('task')
+    #  tasks = task_table.find()
+    #  task_ids = [ o.get("_id") for o in tasks ]
+    #  print(task_ids)
+    #  with ThreadPoolExecutor(max_workers=4) as pool:
+        #  for task_id in task_ids:
+            #  start(task_id)
 

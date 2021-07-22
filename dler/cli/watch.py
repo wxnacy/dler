@@ -6,6 +6,7 @@
 """
 
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
 
 from dler.downloader.models import Task
 from dler.downloader.models import SubTask
@@ -35,10 +36,6 @@ def watch_task(task_id):
             print(task_id, 'delete')
             #  progress.stop_task(progress_task_id)
             break
-        if task.is_success:
-            print(task._id, 'success')
-            #  progress.stop_task(progress_task_id)
-            break
         sub_tasks = task.find_sub_tasks()
         total_count = len(sub_tasks)
         success_sub_tasks = task.find_sub_tasks(
@@ -48,7 +45,11 @@ def watch_task(task_id):
         inc_count = now_success_count - success_count
         logger.info('inc_count %s', inc_count)
         success_count = now_success_count
-        progress.update(progress_task_id, total = total_count, advance = inc_count)
+        progress.update(progress_task_id, advance = inc_count)
+        if task.is_success:
+            print(task._id, 'success', str(datetime.now()))
+            #  progress.stop_task(progress_task_id)
+            break
 
 def find_not_worker():
     tasks = Task.db_col().find()

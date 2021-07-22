@@ -5,7 +5,7 @@
 
 """
 
-from wpy.downloader.m3u8_downloader import M3u8Downloader
+from dler.downloader.m3u8_downloader import M3u8Downloader
 
 def main():
     import sys
