@@ -29,10 +29,28 @@ class BaseModel(object):
 class Task(BaseModel):
     table = 'task'
 
+    _id = ''
+    url = ''
+    status = ''
+
+    @property
+    def is_success(self):
+        return self.status == TaskStatus.SUCCESS.value
+
     @classmethod
     def update_status(cls, task_id, status):
         cls.db_col().update({ "_id": task_id }, { "status": status })
 
+    @classmethod
+    def find_one_by_id(cls, task_id):
+        item = cls.db_col().find_one_by_id(task_id)
+        if not item:
+            return item
+        return cls(**item)
+
+    def find_sub_tasks(self, query=None):
+        items = SubTask.db_col(task_id = self._id).find(query)
+        return [SubTask(**o) for o in items if o]
 
 class SubTask(BaseModel):
     table = 'sub_task-{task_id}'

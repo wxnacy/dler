@@ -6,11 +6,22 @@
 """
 import logging
 
+LOGFILE = '/tmp/dler.log'
+
+class CustomerFilter(logging.Filter):
+
+    def filter(self, record):
+        if ':' not in record.filename:
+            record.filename = '{}:{}'.format( record.filename, record.lineno)
+        return True
+
 logging.basicConfig(
-    filename='/tmp/pydler.log',
+    filename=LOGFILE,
+    format="[%(asctime)s] [%(levelname)-5s] [%(filename)-20s] %(message)s",
+    level=logging.DEBUG
 )
 
-from wpy.common.loggers import create_logger
-
-
-
+def create_logger(name):
+    logger = logging.getLogger(name)
+    logger.addFilter(CustomerFilter())
+    return logger

@@ -31,10 +31,12 @@ from pydler.downloader.m3u8_downloader import TaskStatus
 
 
 if __name__ == "__main__":
-    count = SubTask.db_col(task_id = '17290').count({})
-    print(count)
-    tasks = SubTask.db_col(task_id = '17290').find({})
-    #  for task in tasks:
-        #  if task.get("status") == TaskStatus.SUCCESS.value:
-            #  continue
+    import json
+    tasks = Task.db_col().find({})
+    for task in tasks:
+        #  print(task)
+        task = Task(**task)
+        print(task._id, task.status)
+        Task.update_status(task._id, TaskStatus.WAITING.value)
+        SubTask.db_col(task_id = task._id).update({}, { "status": TaskStatus.WAITING.value })
         #  print(task)

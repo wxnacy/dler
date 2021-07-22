@@ -13,4 +13,4 @@ class TaskStatus(Enum):
     FAILED = 'failed'
     PROCESS = 'process'
     STOP = 'stop'
-
+    SLEEP = 'sleep'

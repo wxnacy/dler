@@ -33,7 +33,9 @@ class M3u8Downloader(object):
     task_table = db.get_table('task')
     sub_task_table = None
     download_root = os.path.expanduser('~/Downloads/jable')
-    status = TaskStatus.PROCESS.value
+    status = TaskStatus.WAITING.value
+    _sleep_seconds = 0.01
+    with_progress = True
 
     task_id = ''
 
@@ -46,13 +48,32 @@ class M3u8Downloader(object):
         self.total_count = len(self.sub_task_table.find({}))
         task = Task.db_col().find_one_by_id(self.task_id)
         self.m3 = m3u8.load(task.get("url"))
-        self.progress_task_id = progress.add_task('download',
-            filename = self.task_id, start=False, total = self.total_count)
+
+    def wait_start(self):
+        while self.status != TaskStatus.PROCESS.value:
+            self.logger.info('task %s waiting', self.task_id)
+            self.loop_task()
+            time.sleep(1)
+        self.start()
 
     def start(self):
-        with progress:
-            self._build()
+        self.logger.info('task %s start', self.task_id)
+        self._build()
+        if self.with_progress:
+            with progress:
+                self.run()
+        else:
             self.run()
+
+    def loop_task(self):
+        task = Task.find_one_by_id(self.task_id)
+        self.set_status(task.status)
+
+    def set_status(self, status):
+        self.status = status
+        self._sleep_seconds = 0.01
+        if self.status == TaskStatus.SLEEP.value:
+            self._sleep_seconds = 2
 
     @classmethod
     def _get_name(cls, url):
@@ -107,11 +128,15 @@ class M3u8Downloader(object):
     def run(self):
         self.task_table.update({ "_id": self.task_id },
                 { "status": TaskStatus.PROCESS.value })
-        progress.start_task(self.progress_task_id)
+        self.set_status(TaskStatus.PROCESS.value)
+        if self.with_progress:
+            self.progress_task_id = progress.add_task('download',
+                filename = self.task_id, start=False, total = self.total_count)
+            progress.start_task(self.progress_task_id)
         self._update_success_count()
-        #  self.success_count = SubTask.count_status(self.task_id, TaskStatus.SUCCESS.value) or 0
-        #  progress.update(self.progress_task_id, advance = self.success_count)
         while not self._check_done():
+            self.loop_task()
+            time.sleep(self._sleep_seconds)
             if self._is_continue():
                 continue
             docs = SubTask.find_not_success_items(self.task_id)
@@ -123,17 +148,16 @@ class M3u8Downloader(object):
             if doc.is_success():
                 self._update_sub_task_status(_id, TaskStatus.SUCCESS.value)
                 continue
-            self._update_sub_task_status(_id, TaskStatus.PROCESS.value)
 
-            #  with ThreadPoolExecutor(max_workers=8) as pool:
-                #  pool.submit(self._download_by_web,  _id)
-            self._download_by_web(_id)
+            self.async_download_sub_task(_id)
 
         if self.done:
             self.task_table.update({ "_id": self.task_id },
                 { "status": TaskStatus.SUCCESS.value })
 
-    def _download_by_web(self, sub_id):
+    def async_download_sub_task(self, sub_id):
+        self._update_sub_task_status(sub_id, TaskStatus.PROCESS.value)
+
         requests.get(
             'http://0.0.0.0:{}/api/task/{}/sub_task/{}/download'.format(
                 constants.SERVER_PORT,
@@ -156,7 +180,6 @@ class M3u8Downloader(object):
                 { "status": status, "error": str(e) })
         if flag:
             status = TaskStatus.SUCCESS.value
-            #  progress.update(self.progress_task_id, advance = 1)
         else:
             status = TaskStatus.FAILED.value
         self._update_sub_task_status(sub_id, status)
@@ -184,6 +207,8 @@ class M3u8Downloader(object):
         self.sub_task_table.update({ "_id": _id }, { "status": status })
 
     def _is_continue(self):
+        if self.status == TaskStatus.SLEEP.value:
+            return True
         self.process_count = self.sub_task_table.count(
                 { "status": TaskStatus.PROCESS.value })
         self.logger.info('process_count %s', self.process_count)
@@ -197,7 +222,8 @@ class M3u8Downloader(object):
 
         self.inc_count = success_count - self.success_count
         self.success_count = success_count
-        progress.update(self.progress_task_id, advance = self.inc_count)
+        if self.with_progress:
+            progress.update(self.progress_task_id, advance = self.inc_count)
 
     def _check_done(self):
         self._update_success_count()

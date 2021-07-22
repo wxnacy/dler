@@ -10,10 +10,6 @@ from concurrent.futures import ThreadPoolExecutor
 from dler.downloader.m3u8_downloader import M3u8Downloader
 from dler.downloader.models import Task
 
-def start(task_id):
-    downloader = M3u8Downloader(task_id)
-    downloader.start()
-
 def main():
     import sys
     url = sys.argv[1:][0]
