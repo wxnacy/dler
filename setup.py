@@ -13,7 +13,7 @@ from shutil import rmtree
 from setuptools import find_packages, setup, Command
 
 # Package meta-data.
-NAME = 'pydler'
+NAME = 'dler'
 DESCRIPTION = 'python video downloader'
 URL = 'https://github.com/wxnacy/pydler'
 EMAIL = 'wxnacy@gmail.com'
@@ -31,6 +31,7 @@ REQUIRED = [
     'requests',
     'gevent',
     'gunicorn',
+    'rich',
     #  'celery[redis]>=4.4.2'
 ]
 
@@ -117,12 +118,14 @@ setup(
 
     entry_points={
         'console_scripts': [
-            'dladd=pydler.cli.taskadd:main',
-            'dl=pydler.cli.download:main',
-            'dlm3=pydler.cli.download_m3u8:main',
-            'dlserver=pydler.cli.server:run_server',
-            'pydler=pydler.run:app',
-            'pydler-server=pydler.server:run',
+            'dladd=dler.cli.taskadd:main',
+            'dl=dler.cli.download:main',
+            'dlm3=dler.cli.download_m3u8:main',
+            #  'dlserver=gunicorn -c dler.cli.gunicorn_config dler.cli.server:run_server',
+            'dlserver=dler.cli.server:run_server',
+            'dlapp=dler.cli.server:app',
+            #  'dler=dler.run:app',
+            #  'dler-server=dler.server:run',
         ],
     },
     install_requires=REQUIRED,

@@ -21,7 +21,7 @@ from wpy.db import FileStorage
 from wpy.tools import randoms
 import logging
 
-from pydler.downloader.m3u8_downloader import M3u8Downloader
+from dler.downloader.m3u8_downloader import M3u8Downloader
 
 app = Flask(__name__)
 
@@ -46,7 +46,7 @@ def create_logger(name):
     logger.addFilter(CustomerFilter())
     return logger
 
-logger = create_logger('pydler')
+logger = create_logger('dler')
 
 class TaskStatus(Enum):
     WAITING = 'waiting'

@@ -15,8 +15,8 @@ import time
 from enum import Enum
 
 from .progress import progress, done_event
-from pydler.common.loggers import create_logger
-from pydler.common import constants
+from dler.common.loggers import create_logger
+from dler.common import constants
 
 from .models import Task
 from .models import SubTask
