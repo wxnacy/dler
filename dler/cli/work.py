@@ -5,6 +5,7 @@
 
 """
 
+import os
 from concurrent.futures import ThreadPoolExecutor
 from multiprocessing import Pool
 
@@ -50,7 +51,10 @@ def find_waiting_task():
 
 #  def test():
 
-def main():
+def run_in_shell(task_id):
+    os.system('nohup dlm3 {} > /tmp/dler.log 2>&1 &'.format(task_id))
+
+def _main():
     import sys
     import time
     with Pool(processes = 30) as pool:
@@ -70,12 +74,26 @@ def main():
             logger.info('task %s add', task._id)
             Task.update_status(task._id, TaskStatus.PROCESS.value)
             workers.add(task._id)
-            pool.apply_async(start, (downloaders, task._id,))
+            run_in_shell(task._id)
+            #  pool.apply_async(start, (downloaders, task._id,))
 
-    #  with ThreadPoolExecutor(max_workers=30) as pool:
-        #  while True:
-            #  #  start(task_id)
-
-            #  pool.submit(start, task_id)
-    #  while True:
-        #  pass
+def main():
+    import sys
+    import time
+    while True:
+        if done_event.is_set():
+            Task.db_col().update({}, { "status": TaskStatus.WAITING.value })
+            break
+        reload_download()
+        if is_continue():
+            time.sleep(2)
+            continue
+        task = find_waiting_task()
+        if not task:
+            continue
+        if task._id in workers:
+            continue
+        logger.info('task %s add', task._id)
+        Task.update_status(task._id, TaskStatus.PROCESS.value)
+        workers.add(task._id)
+        run_in_shell(task._id)
