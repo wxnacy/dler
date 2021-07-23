@@ -98,7 +98,7 @@ class UploadCommand(Command):
         self.status('Pushing git tags…')
         os.system('git tag v{0}'.format(about['__version__']))
         os.system('git push --tags')
-        
+
         sys.exit()
 
 # Where the magic happens:
@@ -112,7 +112,7 @@ setup(
     author_email=EMAIL,
     python_requires=REQUIRES_PYTHON,
     url=URL,
-    packages=find_packages(exclude=["tests", "*.tests", "*.tests.*", "tests.*"]),
+    packages=find_packages(include=["dler"]),
     # If your package is a single module, use this instead of 'packages':
     # py_modules=['mypackage'],
 
@@ -123,12 +123,7 @@ setup(
             'dlwork=dler.cli.work:main',
             'dlwatch=dler.cli.watch:main',
             'dlm3=dler.cli.download_m3u8:main',
-            #  'dlserver=gunicorn -c dler.cli.gunicorn_config dler.cli.server:run_server',
-            #  'dlserver=dler.cli.server:run_server',
             'dlserver=dler.cli.server:run_with_gunicorn',
-            #  'dlapp=dler.cli.server:run_with_gunicorn',
-            #  'dler=dler.run:app',
-            #  'dler-server=dler.server:run',
         ],
     },
     install_requires=REQUIRED,
