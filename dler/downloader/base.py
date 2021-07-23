@@ -24,6 +24,7 @@ class Downloader(object, metaclass=abc.ABCMeta):
     logger = create_logger('Downloader')
     done = False
     success_count = 0
+    failed_count = 0
     inc_count = 0
     process_count = 0
     total_count = 0
@@ -41,35 +42,32 @@ class Downloader(object, metaclass=abc.ABCMeta):
         self.sub_task_table = SubTask.db_col(task_id = self.task_id)
         self.task_table = Task.db_col()
         self.start_time = time.time()
-
-    def _build(self):
-        self.total_count = len(self.sub_task_table.find({}))
+        self.total_count = self._get_tatal_count()
 
     def wait_start(self):
         while self.status != TaskStatus.PROCESS.value:
             self.logger.info('task %s waiting', self.task_id)
-            self.loop_task()
+            self._update_data()
             time.sleep(1)
         self.start()
 
     def start(self):
         self.logger.info('task %s start', self.task_id)
-        self._build()
         if self.with_progress:
             with progress:
                 self.run()
         else:
             self.run()
 
-    def loop_task(self):
-        task = Task.find_one_by_id(self.task_id)
-        self.set_status(task.status)
-
-    def set_status(self, status):
+    def set_status(self, status, sync_task=False):
+        """设置状态"""
         self.status = status
         self._sleep_seconds = 0.01
         if self.status == TaskStatus.SLEEP.value:
             self._sleep_seconds = 2
+        if sync_task:
+            self.task_table.update({ "_id": self.task_id },
+                { "status": self.status })
 
     @classmethod
     def _get_name(cls, url):
@@ -86,31 +84,40 @@ class Downloader(object, metaclass=abc.ABCMeta):
         """添加任务"""
         pass
 
-    def run(self):
-        self.task_table.update({ "_id": self.task_id },
-                { "status": TaskStatus.PROCESS.value })
-        self.set_status(TaskStatus.PROCESS.value)
+    def _find_next_sub_task(self):
+        docs = SubTask.find_not_success_items(self.task_id)
+        if not docs:
+            return None
+        doc = docs[0]
+        _id = doc._id
+        # 查看任务是否已经成功
+        if doc.is_success():
+            self._update_sub_task_status(_id, TaskStatus.SUCCESS.value)
+            return None
+        return doc
+
+    def create_progress(self):
+        """创建进度条"""
         if self.with_progress:
             self.progress_task_id = progress.add_task('download',
-                filename = self.task_id, start=False, total = self.total_count)
-            progress.start_task(self.progress_task_id)
-        self._update_success_count()
-        while not self._check_done():
-            self.loop_task()
+                filename = self.task_id, start=True, total = self._get_tatal_count())
+
+    def run(self):
+        self.set_status(TaskStatus.PROCESS.value, True)
+        if self.with_progress:
+            self.create_progress()
+        while True:
+            if self._is_break():
+                break
             time.sleep(self._sleep_seconds)
             if self._is_continue():
                 continue
-            docs = SubTask.find_not_success_items(self.task_id)
-            if not docs:
-                continue
-            doc = docs[0]
-            _id = doc._id
-            # 查看任务是否已经成功
-            if doc.is_success():
-                self._update_sub_task_status(_id, TaskStatus.SUCCESS.value)
+            doc = self._find_next_sub_task()
+            if not doc:
                 continue
 
-            self.async_download_sub_task(_id)
+            self.async_download_sub_task(doc._id)
+        self.print_result()
 
     def async_download_sub_task(self, sub_id):
         self._update_sub_task_status(sub_id, TaskStatus.PROCESS.value)
@@ -159,19 +166,29 @@ class Downloader(object, metaclass=abc.ABCMeta):
         return True
 
     def _update_sub_task_status(self, _id, status):
+        """修改子任务状态"""
         self.sub_task_table.update({ "_id": _id }, { "status": status })
 
-    def _is_continue(self):
-        if self.status == TaskStatus.SLEEP.value:
-            return True
-        self.process_count = self.sub_task_table.count(
-                { "status": TaskStatus.PROCESS.value })
-        self.logger.info('process_count %s', self.process_count)
-        if self.process_count >= 8:
-            return True
-        return False
+    def _get_tatal_count(self):
+        """获取总数量"""
+        return len(self.sub_task_table.find({}))
 
-    def _update_success_count(self):
+    def _update_data(self):
+        """更新数据"""
+        # 获取任务最新状态
+        task = Task.find_one_by_id(self.task_id)
+        # 修改当前状态
+        self.set_status(task.status)
+        total_count = self._get_tatal_count()
+        # 更新总数量
+        if total_count != self.total_count:
+            self.total_count = total_count
+            if self.with_progress:
+                progress.update(self.progress_task_id, total = self.total_count)
+        self.update_progress()
+
+    def update_progress(self):
+        """更新成功数量"""
         success_count = SubTask.count_status(
             self.task_id, TaskStatus.SUCCESS.value) or 0
 
@@ -180,24 +197,49 @@ class Downloader(object, metaclass=abc.ABCMeta):
         if self.with_progress:
             progress.update(self.progress_task_id, advance = self.inc_count)
 
-    def _check_done(self):
-        self._update_success_count()
-        if self.success_count >= self.total_count:
-            self.status = TaskStatus.SUCCESS.value
-        else:
-            error_count = self.sub_task_table.count({ "status": TaskStatus.FAILED.value })
-            if self.success_count + error_count >= self.total_count:
-                self.status = TaskStatus.FAILED.value
-
+    def _is_break(self):
+        """是否终止"""
+        task = Task.find_one_by_id(self.task_id)
+        # 任务被删除
+        if not task:
+            return True
+        # 更新数据
+        self._update_data()
         self.logger.info('success_count %s', self.success_count)
-        if done_event.is_set():
-            self.status = TaskStatus.STOP.value
-            self.task_table.update({ "_id": self.task_id },
-                { "status": self.status })
 
-        self.done = self.status in (TaskStatus.SUCCESS.value,
-                TaskStatus.FAILED.value, TaskStatus.STOP.value)
-        if self.done:
-            self.task_table.update({ "_id": self.task_id },
-                { "status": self.status })
-        return self.done
+        # 根据状态判断是否退出
+        if self.status in (TaskStatus.SUCCESS.value,
+                TaskStatus.FAILED.value, TaskStatus.STOP.value):
+            return True
+
+        # 检查是否外部停止该程序
+        if done_event.is_set():
+            self.set_status(TaskStatus.STOP.value, True)
+            return True
+        # 检查是成功还是失败
+        if self.success_count >= self.total_count:
+            self.set_status(TaskStatus.SUCCESS.value, True)
+            return True
+        else:
+            self.failed_count = self.sub_task_table.count(
+                { "status": TaskStatus.FAILED.value })
+            if self.success_count + self.failed_count >= self.total_count:
+                self.set_status(TaskStatus.FAILED.value, True)
+                return True
+
+        return False
+
+    def print_result(self):
+        print('{} is done {} success {} failed'.format(
+            self.task_id, self.success_count, self.failed_count))
+
+    def _is_continue(self):
+        """是否继续"""
+        if self.status == TaskStatus.SLEEP.value:
+            return True
+        self.process_count = self.sub_task_table.count(
+                { "status": TaskStatus.PROCESS.value })
+        self.logger.info('process_count %s', self.process_count)
+        if self.process_count >= 8:
+            return True
+        return False
