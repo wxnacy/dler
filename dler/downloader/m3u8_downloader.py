@@ -14,8 +14,11 @@ from .models import Task
 from .models import SubTask
 from .enum import TaskStatus
 from .base import Downloader
+from .decorates import downloader_register
 
+@downloader_register()
 class M3u8Downloader(Downloader):
+    filetype = 'm3u8'
     logger = create_logger('M3u8Downloader')
 
     @classmethod

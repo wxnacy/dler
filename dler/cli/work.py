@@ -22,7 +22,6 @@ downloaders = {}
 workers = set()
 
 def find_next_task():
-    #  tasks = Task.db_col().find()
     tasks = [Task(**o) for o in Task.db_col().find() if o.get(
         "_id") not in workers]
     process_count = len([o for o in tasks if o.status == TaskStatus.PROCESS.value])

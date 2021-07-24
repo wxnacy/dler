@@ -10,12 +10,15 @@ import time
 from dler.common.loggers import create_logger
 from wpy.tools import randoms
 
+from .base import Downloader
+from .decorates import downloader_register
+from .enum import TaskStatus
 from .models import Task
 from .models import SubTask
-from .enum import TaskStatus
-from .base import Downloader
 
+@downloader_register()
 class ImageDownloader(Downloader):
+    filetype = 'image'
     logger = create_logger('ImageDownloader')
 
     @classmethod

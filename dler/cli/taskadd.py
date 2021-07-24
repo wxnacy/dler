@@ -6,8 +6,10 @@
 """
 
 from dler.downloader.m3u8_downloader import M3u8Downloader
+from dler.downloader import DownloaderFactory
 
 def main():
     import sys
     url = sys.argv[1:][0]
-    M3u8Downloader.add_task(url)
+    Downloader = DownloaderFactory.get_downloader_by_url(url)
+    Downloader.add_task(url)
