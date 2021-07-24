@@ -50,15 +50,10 @@ class M3u8Downloader(Downloader):
             sub_task_table.insert(doc)
         # 最后插入任务
         print('insert task')
-        task_table = Task.db_col()
-        doc = task_table.find_one_by_id(_id)
         task = {
             "url": url,
             "status": TaskStatus.WAITING.value,
+            "_id": _id
         }
-        if doc:
-            task_table.update({ "_id": _id }, task)
-        else:
-            task['_id'] = _id
-            task_table.insert(task)
+        Task.insert_or_update(task)
         return _id

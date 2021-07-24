@@ -52,6 +52,17 @@ class Task(BaseModel):
         items = SubTask.db_col(task_id = self._id).find(query)
         return [SubTask(**o) for o in items if o]
 
+    @classmethod
+    def insert_or_update(cls, doc):
+        """插入或更新"""
+        _id = doc.get("_id")
+        item = cls.db_col().find_one_by_id(_id)
+        if item:
+            doc.pop('_id', None)
+            cls.db_col().update({ "_id": _id }, doc)
+        else:
+            cls.db_col().insert(doc)
+
 class SubTask(BaseModel):
     table = 'sub_task-{task_id}'
 
