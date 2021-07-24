@@ -85,6 +85,7 @@ class Downloader(object, metaclass=abc.ABCMeta):
         pass
 
     def _find_next_sub_task(self):
+        """查找下一个子任务"""
         docs = SubTask.find_not_success_items(self.task_id)
         if not docs:
             return None
@@ -96,11 +97,16 @@ class Downloader(object, metaclass=abc.ABCMeta):
             return None
         return doc
 
+    def _craete_progress_name(self):
+        """创建进度条名称"""
+        return self.task_id
+
     def create_progress(self):
         """创建进度条"""
         if self.with_progress:
             self.progress_task_id = progress.add_task('download',
-                filename = self.task_id, start=True, total = self._get_tatal_count())
+                filename = self._craete_progress_name(),
+                start=True, total = self._get_tatal_count())
 
     def run(self):
         self.set_status(TaskStatus.PROCESS.value, True)
