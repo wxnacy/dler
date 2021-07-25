@@ -9,6 +9,7 @@ import m3u8
 import os
 import requests
 import time
+from datetime import datetime
 
 from enum import Enum
 
@@ -123,7 +124,14 @@ class Downloader(object, metaclass=abc.ABCMeta):
                 continue
 
             self.async_download_sub_task(doc._id)
+            self._update_task()
+        self._update_task()
         self.print_result()
+
+    def _update_task(self):
+        return Task.update_by_id(self.task_id, {
+            "success_count": self.success_count
+        })
 
     def async_download_sub_task(self, sub_id):
         self._update_sub_task_status(sub_id, TaskStatus.PROCESS.value)
@@ -189,8 +197,8 @@ class Downloader(object, metaclass=abc.ABCMeta):
         # 更新总数量
         if total_count != self.total_count:
             self.total_count = total_count
-            if self.with_progress:
-                progress.update(self.progress_task_id, total = self.total_count)
+            #  if self.with_progress:
+                #  progress.update(self.progress_task_id, total = self.total_count)
         self.update_progress()
 
     def update_progress(self):
@@ -203,7 +211,27 @@ class Downloader(object, metaclass=abc.ABCMeta):
         if self.with_progress:
             progress.update(self.progress_task_id, advance = self.inc_count)
 
-    def _is_break(self):
+    def _is_watch_break(self):
+        """是否终止"""
+        task = Task.find_one_by_id(self.task_id)
+        # 任务被删除
+        if not task:
+            return True
+        # 更新数据
+        self._update_data()
+
+        # 根据状态判断是否退出
+        if self.status in (TaskStatus.SUCCESS.value,):
+            return True
+
+        # 检查是否外部停止该程序
+        if done_event.is_set():
+            self.set_status(TaskStatus.STOP.value, sync_task)
+            return True
+
+        return False
+
+    def _is_break(self, sync_task=True):
         """是否终止"""
         task = Task.find_one_by_id(self.task_id)
         # 任务被删除
@@ -220,24 +248,28 @@ class Downloader(object, metaclass=abc.ABCMeta):
 
         # 检查是否外部停止该程序
         if done_event.is_set():
-            self.set_status(TaskStatus.STOP.value, True)
+            self.set_status(TaskStatus.STOP.value, sync_task)
             return True
         # 检查是成功还是失败
         if self.success_count >= self.total_count:
-            self.set_status(TaskStatus.SUCCESS.value, True)
+            self.set_status(TaskStatus.SUCCESS.value, sync_task)
             return True
         else:
             self.failed_count = self.sub_task_table.count(
                 { "status": TaskStatus.FAILED.value })
             if self.success_count + self.failed_count >= self.total_count:
-                self.set_status(TaskStatus.FAILED.value, True)
+                self.set_status(TaskStatus.FAILED.value, sync_task)
                 return True
 
         return False
 
     def print_result(self):
-        print('{} is done {} success {} failed'.format(
-            self.task_id, self.success_count, self.failed_count))
+        task = Task.find_one_by_id(self.task_id)
+        if not task:
+            print('{} is delete'.format(self.task_id))
+            return
+        print('{} is done on {} {} success {} failed'.format(
+            self.task_id, datetime.now(), self.success_count, self.failed_count))
 
     def _is_continue(self):
         """是否继续"""
@@ -249,3 +281,12 @@ class Downloader(object, metaclass=abc.ABCMeta):
         if self.process_count >= 8:
             return True
         return False
+
+    @classmethod
+    def insert_task(cls, task_id, url, **kwargs):
+        """添加任务"""
+        task = Task(_id = task_id, url = url,
+                filetype = cls.filetype,
+            **kwargs)
+        task.insert_or_update_ins()
+        return task

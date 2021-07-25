@@ -22,11 +22,12 @@ downloaders = {}
 workers = set()
 
 def find_next_task():
-    tasks = [Task(**o) for o in Task.db_col().find() if o.get(
-        "_id") not in workers]
-    process_count = len([o for o in tasks if o.status == TaskStatus.PROCESS.value])
+    process_count = Task.count_status(TaskStatus.PROCESS.value)
     if process_count >= 8:
         return None
+    tasks = [Task(**o) for o in Task.db_col().find() if o.get(
+        "_id") not in workers and o.get("status") != TaskStatus.SUCCESS.value]
+    tasks.sort(key = lambda x: x.success_count, reverse = True)
     return tasks[0] if tasks else None
 
 def run_in_shell(task_id):
@@ -37,11 +38,17 @@ def main():
     import time
     while True:
         if done_event.is_set():
-            Task.db_col().update({}, { "status": TaskStatus.WAITING.value })
+            tasks = Task.iter(None, {})
+            for task in tasks:
+                if task.status in ( TaskStatus.SUCCESS.value ):
+                    continue
+                Task.update_status(task._id, TaskStatus.WAITING.value)
+            #  Task.db_col().update({}, { "status": TaskStatus.WAITING.value })
             break
         task = find_next_task()
         if not task:
             continue
         logger.info('task %s add', task._id)
         workers.add(task._id)
+        Task.update_status(task._id, TaskStatus.PROCESS.value)
         run_in_shell(task._id)

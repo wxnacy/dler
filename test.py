@@ -3,40 +3,26 @@
 # Author: wxnacy(wxnacy@gmail.com)
 # Description:
 
-#  import typer
-
-#  app = typer.Typer()
-
-
-#  @app.command()
-#  def hello(name: str):
-    #  '''添加下载地址到队列'''
-    #  typer.echo(f"Hello {name}")
-
-
-#  @app.command()
-#  def goodbye(name: str, formal: bool = False):
-    #  if formal:
-        #  typer.echo(f"Goodbye Ms. {name}. Have a good day.")
-    #  else:
-        #  typer.echo(f"Bye {name}!")
-
-
-#  if __name__ == "__main__":
-    #  app()k.
-
-from pydler.downloader.models import Task
-from pydler.downloader.models import SubTask
-from pydler.downloader.m3u8_downloader import TaskStatus
+from dler.downloader.models import BaseModel
+from dler.downloader.models import Task
+from dler.downloader.models import SubTask
+from dler.downloader.m3u8_downloader import TaskStatus
 
 
 if __name__ == "__main__":
     import json
-    tasks = Task.db_col().find({})
+    #  task = Task(_id = 1)
+    #  print(BaseModel.__default_dict__())
+    #  print(task.__dict__)
+    #  print(Task.__default_dict__())
+    #  print(Task.__dict__)
+    tasks = [Task(**o) for o in Task.db_col().find({})]
+    tasks.sort(key = lambda x: x.success_count, reverse=True)
     for task in tasks:
-        #  print(task)
-        task = Task(**task)
-        print(task._id, task.status)
-        Task.update_status(task._id, TaskStatus.WAITING.value)
-        SubTask.db_col(task_id = task._id).update({}, { "status": TaskStatus.WAITING.value })
-        #  print(task)
+        print(task._id, task.success_count, task.status)
+        #  #  print(task)
+        #  task = Task(**task)
+        #  print(task._id, task.status)
+        #  Task.update_status(task._id, TaskStatus.WAITING.value)
+        #  SubTask.db_col(task_id = task._id).update({}, { "status": TaskStatus.WAITING.value })
+        #  #  print(task)

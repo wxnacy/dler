@@ -6,32 +6,98 @@
 """
 
 import os
+import uuid
 from wpy.db import FileStorage
+from datetime import datetime
 
 from .enum import TaskStatus
 
 fs = FileStorage('~/Downloads/db')
 
+class FSColumn(object):
+    datatype = None
+    default = None
+
+    def __init__(self, datatype, **kwargs):
+        self.datatype = datatype
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+        if self.default == None:
+            if issubclass(datatype, int):
+                self.default = 0
+
+    def value(self):
+        val = str(self.default()) if callable(self.default) else self.default
+        return val
+
 class BaseModel(object):
-    db = 'm3u8'
+    db = 'download'
     table = ''
     _db = None
 
+    _id = FSColumn(str, default = uuid.uuid4)
+    _create_time = FSColumn(datetime, default=datetime.now)
+    _update_time = FSColumn(datetime, default=datetime.now)
+
     def __init__(self, **kwargs):
-        for k, v in kwargs.items():
+        init_data = self.__default_dict__()
+        init_data.update(kwargs)
+        for k, v in init_data.items():
             setattr(self, k, v)
+
+    @classmethod
+    def __default_dict__(cls):
+        '''获取默认 dict'''
+        res = {}
+        classes = [cls]
+        # 兼容父类的 __dict__
+        classes.extend(cls.__bases__)
+        for clz in classes:
+            for k, v in clz.__dict__.items():
+                if isinstance(v, FSColumn):
+                    res[k] = v.value()
+        return res
+
+    @classmethod
+    def iter(cls, col, query, projection=None, sort=None):
+        if not col:
+            col = {}
+        items = cls.db_col(**col).find(query, projection = projection)
+        items = [cls(**o) for o in items]
+        return items
 
     @classmethod
     def db_col(cls, **kwargs):
         table = cls.table.format(**kwargs)
         return fs.get_db(cls.db).get_table(table)
 
+    def insert_ins(self):
+        '''保存实例'''
+        doc = dict(self.__dict__)
+        doc.pop('table', None)
+        _id = self.db_col().insert(doc)
+        self._id = _id
+
+    def insert_or_update_ins(self):
+        '''保存实例'''
+        doc = dict(self.__dict__)
+        doc.pop('table', None)
+        _id = self._id
+        item = self.db_col().find_one_by_id(_id)
+        if item:
+            doc.pop('_id', None)
+            self.db_col().update({ "_id": _id }, doc)
+        else:
+            self.db_col().insert(doc)
+
 class Task(BaseModel):
     table = 'task'
 
     _id = ''
-    url = ''
-    status = ''
+    url = FSColumn(str, )
+    status = FSColumn(str, default=TaskStatus.WAITING.value)
+    filetype = FSColumn(str, )
+    success_count = FSColumn(int, )
 
     @property
     def is_success(self):
@@ -62,6 +128,14 @@ class Task(BaseModel):
             cls.db_col().update({ "_id": _id }, doc)
         else:
             cls.db_col().insert(doc)
+
+    @classmethod
+    def count_status(cls, status):
+        return cls.db_col().count({ "status": status })
+
+    @classmethod
+    def update_by_id(cls, task_id, update_data):
+        return cls.db_col().update({ "_id": task_id }, update_data)
 
 class SubTask(BaseModel):
     table = 'sub_task-{task_id}'

@@ -5,8 +5,10 @@
 
 """
 
+import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
+from wpy.functools import run_shell
 
 from dler.downloader.models import Task
 from dler.downloader.models import SubTask
@@ -19,38 +21,25 @@ logger = create_logger('dlwatch')
 
 workers = set()
 
-#  def watch_task(task_id):
-    #  logger.info(task_id)
-    #  task = Task.find_one_by_id(task_id)
-    #  sub_tasks = task.find_sub_tasks()
-    #  total_count = len(sub_tasks)
-    #  progress_task_id = progress.add_task('download',
-                #  filename = task_id, start=True, total = total_count)
-    #  success_count = 0
+POOL_SIZE = 32
 
-    #  while True:
-        #  if done_event.is_set():
-            #  #  progress.stop_task(progress_task_id)
-            #  break
-        #  task = Task.find_one_by_id(task_id)
-        #  if not task:
-            #  print(task_id, 'delete')
-            #  #  progress.stop_task(progress_task_id)
-            #  break
-        #  sub_tasks = task.find_sub_tasks()
-        #  total_count = len(sub_tasks)
-        #  success_sub_tasks = task.find_sub_tasks(
-            #  { "status": TaskStatus.SUCCESS.value })
-        #  now_success_count = len(success_sub_tasks)
-
-        #  inc_count = now_success_count - success_count
-        #  logger.info('inc_count %s', inc_count)
-        #  success_count = now_success_count
-        #  progress.update(progress_task_id, advance = inc_count)
-        #  if task.is_success:
-            #  print(task._id, 'success', str(datetime.now()))
-            #  #  progress.stop_task(progress_task_id)
-            #  break
+def _watch():
+    task_id = progress.add_task('process', filename='process',
+            start=True, total = POOL_SIZE)
+    process_count = 0
+    while True:
+        time.sleep(1)
+        if done_event.is_set():
+            break
+        res, _ = run_shell('ps -ef | grep dlm3 | wc -l')
+        now_process_count = 0
+        try:
+            now_process_count = int(res.decode('utf-8').strip().strip('\n')) - 2
+        except:
+            pass
+        advance = now_process_count - process_count
+        process_count = now_process_count
+        progress.update(task_id, advance = advance)
 
 def _watch_task(task_id):
     logger.info(task_id)
@@ -58,17 +47,16 @@ def _watch_task(task_id):
     downloader.create_progress()
 
     while True:
-        if downloader._is_break():
+        time.sleep(4)
+        if downloader._is_watch_break():
             break
-        if downloader._is_continue():
-            continue
-        downloader.update_progress()
     downloader.print_result()
 
 def find_not_worker():
-    tasks = Task.db_col().find()
+    tasks = [Task(**o) for o in Task.db_col().find() if o.get(
+        "status") != TaskStatus.SUCCESS.value ]
+    tasks.sort(key = lambda x: x.success_count, reverse=True)
     for task in tasks:
-        task = Task(**task)
         if task._id not in workers:
             return task
     return None
@@ -79,9 +67,11 @@ def main():
 
     with progress:
         with ThreadPoolExecutor(max_workers=30) as pool:
+            pool.submit(_watch)
             while True:
                 if done_event.is_set():
                     break
+                time.sleep(1)
                 task = find_not_worker()
                 if not task:
                     continue

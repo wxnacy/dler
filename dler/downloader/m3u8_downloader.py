@@ -53,10 +53,5 @@ class M3u8Downloader(Downloader):
             sub_task_table.insert(doc)
         # 最后插入任务
         print('insert task')
-        task = {
-            "url": url,
-            "status": TaskStatus.WAITING.value,
-            "_id": _id
-        }
-        Task.insert_or_update(task)
+        cls.insert_task(_id, url)
         return _id
