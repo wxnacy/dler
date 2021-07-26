@@ -278,7 +278,7 @@ class Downloader(object, metaclass=abc.ABCMeta):
         self.process_count = self.sub_task_table.count(
                 { "status": TaskStatus.PROCESS.value })
         self.logger.info('process_count %s', self.process_count)
-        if self.process_count >= 8:
+        if self.process_count >= constants.MAX_SUB_TASK_PROCESS:
             return True
         return False
 

@@ -6,6 +6,7 @@
 """
 
 import os
+import time
 from concurrent.futures import ThreadPoolExecutor
 from multiprocessing import Pool
 
@@ -15,6 +16,7 @@ from dler.downloader.models import SubTask
 from dler.downloader.enum import TaskStatus
 from dler.downloader.progress import done_event
 from dler.common.loggers import create_logger
+from dler.common import constants
 
 logger = create_logger('dlwork')
 
@@ -23,7 +25,7 @@ workers = set()
 
 def find_next_task():
     process_count = Task.count_status(TaskStatus.PROCESS.value)
-    if process_count >= 8:
+    if process_count >= constants.MAX_TASK_PROCESS:
         return None
     tasks = [Task(**o) for o in Task.db_col().find() if o.get(
         "_id") not in workers and o.get("status") != TaskStatus.SUCCESS.value]
@@ -37,6 +39,7 @@ def main():
     import sys
     import time
     while True:
+        time.sleep(1)
         if done_event.is_set():
             tasks = Task.iter(None, {})
             for task in tasks:

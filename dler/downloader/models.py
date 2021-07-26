@@ -30,8 +30,8 @@ class FSColumn(object):
         val = str(self.default()) if callable(self.default) else self.default
         return val
 
-class BaseModel(object):
-    db = 'download'
+class FSModel(object):
+    db = ''
     table = ''
     _db = None
 
@@ -59,17 +59,40 @@ class BaseModel(object):
         return res
 
     @classmethod
+    def db_col(cls, **kwargs):
+        table = cls.table.format(**kwargs)
+        return fs.get_db(cls.db).get_table(table)
+
+    @classmethod
+    def find_one_by_id(cls, query, db_col=None):
+        if not db_col:
+            db_col = {}
+        item = cls.db_col(**db_col).find_one_by_id(query)
+        return cls(**item) if item else None
+
+    def save(self):
+        data = self.__default_dict__()
+        data.update(self.__dict__)
+        db = self.db_col(**self.__dict__)
+        item = db.find_one_by_id(self._id)
+        if item:
+            data.pop('_id', None)
+            db.update({ "_id": self._id }, data)
+        else:
+            db.insert(data)
+
+class BaseModel(FSModel):
+    db = 'download'
+    table = ''
+    _db = None
+
+    @classmethod
     def iter(cls, col, query, projection=None, sort=None):
         if not col:
             col = {}
         items = cls.db_col(**col).find(query, projection = projection)
         items = [cls(**o) for o in items]
         return items
-
-    @classmethod
-    def db_col(cls, **kwargs):
-        table = cls.table.format(**kwargs)
-        return fs.get_db(cls.db).get_table(table)
 
     def insert_ins(self):
         '''保存实例'''
