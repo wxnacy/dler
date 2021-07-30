@@ -7,6 +7,7 @@
 from gevent import monkey
 monkey.patch_all()
 import json
+import time
 import os
 import gevent
 
@@ -60,9 +61,11 @@ def start_gunicorn():
     module_path = dler.__path__[0]
     config_path = os.path.join(module_path, 'cli/gunicorn_config.py')
     os.system('nohup gunicorn -c {} dler.cli.server:app >/tmp/dler.log 2>&1 &'.format(config_path))
+    print('dlserver start')
 
 def stop_gunicorn():
     os.system("nohup ps -ef | grep 'gunicorn.*dler' | awk '{ print $2 }' | xargs kill -9 >/tmp/dler.log 2>&1 &")
+    print('dlserver stop')
 
 def run_with_gunicorn():
     import sys
@@ -75,8 +78,12 @@ def run_with_gunicorn():
         start_gunicorn()
     elif cmd == 'stop':
         stop_gunicorn()
-    else:
-        stop_gunicorn()
+    elif cmd == 'restart':
+        try:
+            stop_gunicorn()
+        except:
+            pass
+        time.sleep(.5)
         start_gunicorn()
 
 if __name__ == "__main__":
