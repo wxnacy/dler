@@ -6,7 +6,6 @@
 """
 from gevent import monkey
 monkey.patch_all()
-#  monkey.patch_all(ssl=False)
 import json
 import os
 import gevent
@@ -17,6 +16,7 @@ from flask import request
 import logging
 
 from dler.downloader.m3u8_downloader import M3u8Downloader
+from dler.downloader.base import Downloader
 from dler.common.loggers import create_logger
 
 app = Flask(__name__)
@@ -27,6 +27,12 @@ logger = create_logger('dler')
 def sub_task_download(task_id, sub_id):
     downloader = M3u8Downloader(task_id)
     gevent.spawn(downloader.download_sub_task, sub_id)
+    return 'success'
+
+@app.route('/api/download', methods=['POST'])
+def download():
+    data = request.json
+    gevent.spawn(Downloader.download, data.get("url"), data.get("path"))
     return 'success'
 
 @app.route('/test', methods=['post', 'get'])
