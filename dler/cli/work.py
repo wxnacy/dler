@@ -27,8 +27,13 @@ def find_next_task():
     process_count = Task.count_status(TaskStatus.PROCESS.value)
     if process_count >= constants.MAX_TASK_PROCESS:
         return None
-    tasks = [Task(**o) for o in Task.db_col().find() if o.get(
-        "_id") not in workers and o.get("status") != TaskStatus.SUCCESS.value]
+    query = {
+        "_id": { "$nin": workers },
+        "status": { "$nin": [TaskStatus.SUCCESS.value] }
+    }
+    #  tasks = [Task(**o) for o in Task.db_col().find() if o.get(
+        #  "_id") not in workers and o.get("status") != TaskStatus.SUCCESS.value]
+    tasks = Task.find(query)
     tasks.sort(key = lambda x: x.success_count, reverse = True)
     return tasks[0] if tasks else None
 
@@ -46,7 +51,6 @@ def main():
                 if task.status in ( TaskStatus.SUCCESS.value ):
                     continue
                 Task.update_status(task._id, TaskStatus.WAITING.value)
-            #  Task.db_col().update({}, { "status": TaskStatus.WAITING.value })
             break
         task = find_next_task()
         if not task:
