@@ -36,6 +36,7 @@ class M3u8Downloader(Downloader):
         }
         sub_task_table.insert(doc)
         m3 = m3u8.load(url)
+        total_count = 0
         for i, name in enumerate(m3.files):
             ts_url = name
             if not ts_url.startswith('http'):
@@ -51,7 +52,8 @@ class M3u8Downloader(Downloader):
                 "status": status
             }
             sub_task_table.insert(doc)
+            total_count += 1
         # 最后插入任务
         print('insert task')
-        cls.insert_task(_id, url)
+        cls.insert_task(_id, url, total_count = total_count)
         return _id

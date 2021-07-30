@@ -16,6 +16,7 @@ from enum import Enum
 from .progress import progress, done_event
 from dler.common.loggers import create_logger
 from dler.common import constants
+from dler.common import utils
 
 from .models import Task
 from .models import SubTask
@@ -31,7 +32,7 @@ class Downloader(object, metaclass=abc.ABCMeta):
     total_count = 0
     task_table = None
     sub_task_table = None
-    download_root = os.path.expanduser('~/Downloads/jable')
+    download_root = os.path.expanduser('~/Downloads')
     status = TaskStatus.WAITING.value
     _sleep_seconds = 0.01
     with_progress = True
@@ -144,16 +145,19 @@ class Downloader(object, metaclass=abc.ABCMeta):
 
     def download_sub_task(self, sub_id):
         """下载子任务"""
-        doc = self.sub_task_table.find_one_by_id(sub_id)
+        sub_task = SubTask.find_one_by_id(sub_id, db_col=dict(task_id = self.task_id))
 
         status = TaskStatus.SUCCESS.value
         try:
-            flag = self._download(doc.get("download_url"), doc.get("download_path"))
+            if sub_task.proxyon:
+                utils.proxyon()
+            flag = self._download(sub_task.download_url, sub_task.download_path)
         except Exception as e:
             flag = False
             status = TaskStatus.FAILED.value
             self.sub_task_table.update({ "_id": sub_id },
                 { "status": status, "error": str(e) })
+        utils.proxyoff()
         if flag:
             status = TaskStatus.SUCCESS.value
         else:
