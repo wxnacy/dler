@@ -138,10 +138,9 @@ class Downloader(object, metaclass=abc.ABCMeta):
         self._update_sub_task_status(sub_id, TaskStatus.PROCESS.value)
 
         requests.get(
-            'http://0.0.0.0:{}/api/task/{}/sub_task/{}/download'.format(
-                constants.SERVER_PORT,
-                self.task_id, sub_id
-        ))
+            self._format_url('/api/task/{}/sub_task/{}/download'.format(
+                self.task_id, sub_id))
+        )
 
     def download_sub_task(self, sub_id):
         """下载子任务"""
@@ -165,11 +164,28 @@ class Downloader(object, metaclass=abc.ABCMeta):
         self._update_sub_task_status(sub_id, status)
         return status
 
-    def _download(self, url, path):
+    @classmethod
+    def _format_url(cls, path):
+        return constants.SERVER_HOMEPAGE + path
+
+    @classmethod
+    def async_download(cls, url, path):
+        requests.post(cls._format_url('/api/download'),
+            json={ "url": url, "path": path })
+
+    @classmethod
+    def download(cls, url, path):
+        return cls._download(url, path)
+
+    @classmethod
+    def _download(cls, url, path):
+        cls.logger.info('downlaod %s to %s', url, path)
         headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-                  "(KHTML, like Gecko) Chrome/71.0.3578.80 Safari/537.36",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.80 "
+                "Safari/537.36",
         }
+        path = os.path.expanduser(path)
         if os.path.exists(path):
             return True
         dirname = os.path.dirname(path)

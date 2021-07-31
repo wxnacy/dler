@@ -6,8 +6,10 @@
 """
 
 from .factory import DownloaderFactory
+from .base import Downloader
 
 
 __all__ = [
-    'DownloaderFactory'
+    'DownloaderFactory',
+    'Downloader',
         ]
