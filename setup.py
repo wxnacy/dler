@@ -123,6 +123,7 @@ setup(
             'dlwork=dler.cli.work:main',
             'dlwatch=dler.cli.watch:main',
             'dlm3=dler.cli.download_m3u8:main',
+            'dltask=dler.cli.download_task:main',
             'dlserver=dler.cli.server:run_with_gunicorn',
         ],
     },

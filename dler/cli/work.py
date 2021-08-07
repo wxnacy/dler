@@ -17,6 +17,7 @@ from dler.downloader.enum import TaskStatus
 from dler.downloader.progress import done_event
 from dler.common.loggers import create_logger
 from dler.common import constants
+from dler.common import utils
 
 logger = create_logger('dlwork')
 
@@ -24,17 +25,12 @@ downloaders = {}
 workers = set()
 
 def find_next_task():
-    process_count = Task.count_status(TaskStatus.PROCESS.value)
+    process_count = utils.cmd_count('dlm3')
+    logger.info('process_count %s', process_count)
+    print(process_count)
     if process_count >= constants.MAX_TASK_PROCESS:
         return None
-    query = {
-        "_id": { "$nin": list(workers) },
-        "status": { "$nin": [TaskStatus.SUCCESS.value] }
-    }
-    #  tasks = [Task(**o) for o in Task.db_col().find() if o.get(
-        #  "_id") not in workers and o.get("status") != TaskStatus.SUCCESS.value]
-    tasks = Task.find(query)
-    tasks.sort(key = lambda x: x.success_count, reverse = True)
+    tasks = Task.find_need_download_tasks(workers)
     return tasks[0] if tasks else None
 
 def run_in_shell(task_id):
@@ -48,9 +44,11 @@ def main():
         if done_event.is_set():
             tasks = Task.iter(None, {})
             for task in tasks:
-                if task.status in ( TaskStatus.SUCCESS.value ):
-                    continue
-                Task.update_status(task._id, TaskStatus.WAITING.value)
+                #  if task.status in ( TaskStatus.SUCCESS.value,
+                        #  TaskStatus.FAILED.value ):
+                    #  continue
+                if task.status in (TaskStatus.PROCESS.value):
+                    Task.update_status(task._id, TaskStatus.WAITING.value)
             break
         task = find_next_task()
         if not task:

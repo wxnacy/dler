@@ -156,6 +156,7 @@ class Downloader(object, metaclass=abc.ABCMeta):
             status = TaskStatus.FAILED.value
             self.sub_task_table.update({ "_id": sub_id },
                 { "status": status, "error": str(e) })
+            #  self.set_status(status, True)
         utils.proxyoff()
         if flag:
             status = TaskStatus.SUCCESS.value
@@ -164,18 +165,29 @@ class Downloader(object, metaclass=abc.ABCMeta):
         self._update_sub_task_status(sub_id, status)
         return status
 
+    def get_sub_tasks(self):
+        """获取子任务列表"""
+        return SubTask.find({ "task_id": self.task_id },
+            db_col = { "task_id": self.task_id })
+
     @classmethod
     def _format_url(cls, path):
         return constants.SERVER_HOMEPAGE + path
 
     @classmethod
-    def async_download(cls, url, path):
+    def async_download(cls, url, path, proxyon=False):
         requests.post(cls._format_url('/api/download'),
-            json={ "url": url, "path": path })
+            json={ "url": url, "path": path, "proxyon": proxyon })
 
     @classmethod
-    def download(cls, url, path):
-        return cls._download(url, path)
+    def download(cls, url, path, proxyon=False):
+        cls.logger.info('url %s path %s proxyon %s', 
+            url, path, proxyon)
+        if proxyon:
+            utils.proxyon()
+        res =  cls._download(url, path)
+        utils.proxyoff()
+        return res
 
     @classmethod
     def _download(cls, url, path):
@@ -256,6 +268,12 @@ class Downloader(object, metaclass=abc.ABCMeta):
         task = Task.find_one_by_id(self.task_id)
         # 任务被删除
         if not task:
+            return True
+        if task.status in (TaskStatus.SUCCESS.value,
+                TaskStatus.FAILED.value, TaskStatus.STOP.value):
+            return True
+        failed_count = SubTask.count_status(self.task_id, TaskStatus.FAILED.value)
+        if failed_count > 10:
             return True
         # 更新数据
         self._update_data()

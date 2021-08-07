@@ -16,6 +16,7 @@ from dler.downloader.enum import TaskStatus
 from dler.downloader.progress import done_event, progress
 from dler.downloader.m3u8_downloader import M3u8Downloader
 from dler.common.loggers import create_logger
+from dler.common import utils
 
 logger = create_logger('dlwatch')
 
@@ -31,12 +32,7 @@ def _watch():
         time.sleep(1)
         if done_event.is_set():
             break
-        res, _ = run_shell('ps -ef | grep dlm3 | wc -l')
-        now_process_count = 0
-        try:
-            now_process_count = int(res.decode('utf-8').strip().strip('\n')) - 2
-        except:
-            pass
+        now_process_count = utils.cmd_count('dlm3')
         advance = now_process_count - process_count
         process_count = now_process_count
         progress.update(task_id, advance = advance)

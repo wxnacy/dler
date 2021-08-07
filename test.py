@@ -28,4 +28,9 @@ if __name__ == "__main__":
         #  SubTask.db_col(task_id = task._id).update({}, { "status": TaskStatus.WAITING.value })
         #  #  print(task)
 
-    Downloader.async_download('http://kbs-dokdo.gscdn.com/dokdo_300/_definst_/dokdo_300.stream/playlist.m3u8', '~/Downloads/test.m3u8')
+    #  Downloader.async_download('http://kbs-dokdo.gscdn.com/dokdo_300/_definst_/dokdo_300.stream/playlist.m3u8', '~/Downloads/test.m3u8')
+    tasks = Task.find_need_download_tasks([10952])
+    for task in tasks:
+        print(task._id, task.status)
+    #  tasks = SubTask.find({ "status": "failed" }, db_col={"task_id": "1312"})
+    #  print(len(tasks))

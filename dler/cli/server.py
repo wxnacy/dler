@@ -33,7 +33,8 @@ def sub_task_download(task_id, sub_id):
 @app.route('/api/download', methods=['POST'])
 def download():
     data = request.json
-    gevent.spawn(Downloader.download, data.get("url"), data.get("path"))
+    gevent.spawn(Downloader.download, data.get("url"),
+        data.get("path"), data.get("proxyon"))
     return 'success'
 
 @app.route('/test', methods=['post', 'get'])
