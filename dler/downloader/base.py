@@ -36,6 +36,7 @@ class Downloader(object, metaclass=abc.ABCMeta):
     status = TaskStatus.WAITING.value
     _sleep_seconds = 0.01
     with_progress = True
+    is_async = True
 
     task_id = ''
 
@@ -124,7 +125,10 @@ class Downloader(object, metaclass=abc.ABCMeta):
             if not doc:
                 continue
 
-            self.async_download_sub_task(doc._id)
+            if self.is_async:
+                self.async_download_sub_task(doc._id)
+            else:
+                self.download_sub_task(doc._id)
             self._update_task()
         self._update_task()
         self.print_result()
@@ -274,6 +278,7 @@ class Downloader(object, metaclass=abc.ABCMeta):
             return True
         failed_count = SubTask.count_status(self.task_id, TaskStatus.FAILED.value)
         if failed_count > 10:
+            self.set_status(TaskStatus.FAILED.value, True)
             return True
         # 更新数据
         self._update_data()

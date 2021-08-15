@@ -17,4 +17,5 @@ def main():
     if url.startswith('http'):
         task_id = M3u8Downloader.add_task(url)
     downloader = M3u8Downloader(task_id)
+    #  downloader.is_async = False
     downloader.start()

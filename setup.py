@@ -121,6 +121,7 @@ setup(
             'dladd=dler.cli.taskadd:main',
             'dl=dler.cli.download:main',
             'dlwork=dler.cli.work:main',
+            'dlstatus=dler.cli.status:main',
             'dlwatch=dler.cli.watch:main',
             'dlm3=dler.cli.download_m3u8:main',
             'dltask=dler.cli.download_task:main',

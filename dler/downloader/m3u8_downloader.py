@@ -55,5 +55,5 @@ class M3u8Downloader(Downloader):
             total_count += 1
         # 最后插入任务
         print('insert task')
-        cls.insert_task(_id, url, total_count = total_count)
+        cls.insert_task(_id, url, total_count = total_count + 1)
         return _id

@@ -25,7 +25,7 @@ downloaders = {}
 workers = set()
 
 def find_next_task():
-    process_count = utils.cmd_count('dlm3')
+    process_count = utils.dlm3_count()
     logger.info('process_count %s', process_count)
     print(process_count)
     if process_count >= constants.MAX_TASK_PROCESS:
@@ -48,7 +48,7 @@ def main():
                         #  TaskStatus.FAILED.value ):
                     #  continue
                 if task.status in (TaskStatus.PROCESS.value):
-                    Task.update_status(task._id, TaskStatus.WAITING.value)
+                    Task.update_status(task._id, TaskStatus.STOP.value)
             break
         task = find_next_task()
         if not task:

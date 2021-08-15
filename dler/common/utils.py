@@ -25,3 +25,6 @@ def cmd_count(cmd):
     except:
         pass
     return now_process_count
+
+def dlm3_count():
+    return cmd_count('bin/dlm3')

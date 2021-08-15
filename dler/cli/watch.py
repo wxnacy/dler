@@ -32,7 +32,7 @@ def _watch():
         time.sleep(1)
         if done_event.is_set():
             break
-        now_process_count = utils.cmd_count('dlm3')
+        now_process_count = utils.dlm3_count()
         advance = now_process_count - process_count
         process_count = now_process_count
         progress.update(task_id, advance = advance)
