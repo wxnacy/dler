@@ -32,6 +32,12 @@ def sub_task_download(task_id, sub_id):
 
 @app.route('/api/download', methods=['POST'])
 def download():
+    """
+    下载文件
+    :param str url: 文件地址
+    :param str path: 存储地址
+    :param bool proxyon: 是否开启代理
+    """
     data = request.json
     gevent.spawn(Downloader.download, data.get("url"),
         data.get("path"), data.get("proxyon"))
