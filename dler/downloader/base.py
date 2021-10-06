@@ -132,6 +132,10 @@ class Downloader(object, metaclass=abc.ABCMeta):
             self._update_task()
         self._update_task()
         self.print_result()
+        self.after_run()
+
+    def after_run(self):
+        pass
 
     def _update_task(self):
         return Task.update_by_id(self.task_id, {
@@ -141,10 +145,14 @@ class Downloader(object, metaclass=abc.ABCMeta):
     def async_download_sub_task(self, sub_id):
         self._update_sub_task_status(sub_id, TaskStatus.PROCESS.value)
 
-        requests.get(
-            self._format_url('/api/task/{}/sub_task/{}/download'.format(
-                self.task_id, sub_id))
-        )
+        try:
+            requests.get(
+                self._format_url('/api/task/{}/sub_task/{}/download'.format(
+                self.task_id, sub_id)))
+        except Exception as e:
+            status = TaskStatus.FAILED.value
+            self.sub_task_table.update({ "_id": sub_id },
+                { "status": status, "error": str(e) })
 
     def download_sub_task(self, sub_id):
         """下载子任务"""
@@ -247,6 +255,8 @@ class Downloader(object, metaclass=abc.ABCMeta):
         if self.with_progress:
             progress.update(self.progress_task_id, advance = self.inc_count)
 
+        Task.update_progress(self.task_id, success_count)
+
     def _is_watch_break(self):
         """是否终止"""
         task = Task.find_one_by_id(self.task_id)
@@ -296,6 +306,7 @@ class Downloader(object, metaclass=abc.ABCMeta):
         # 检查是成功还是失败
         if self.success_count >= self.total_count:
             self.set_status(TaskStatus.SUCCESS.value, sync_task)
+            Task.update_progress(self.task_id, self.success_count)
             return True
         else:
             self.failed_count = self.sub_task_table.count(

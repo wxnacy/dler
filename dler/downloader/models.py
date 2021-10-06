@@ -81,6 +81,14 @@ class Task(BaseModel):
         return self.status == TaskStatus.SUCCESS.value
 
     @classmethod
+    def update_progress(cls,task_id, success_count):
+        task = cls.find_one_by_id(task_id)
+        task.success_count = success_count
+        task.progress = float('{:.2f}'.format(float(success_count) / task.total_count))
+        task.save()
+        return task.progress
+
+    @classmethod
     def update_status(cls, task_id, status):
         cls.db_col().update({ "_id": task_id }, { "status": status })
 

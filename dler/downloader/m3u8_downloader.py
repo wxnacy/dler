@@ -22,8 +22,10 @@ class M3u8Downloader(Downloader):
     logger = create_logger('M3u8Downloader')
 
     @classmethod
-    def add_task(cls, url):
+    def add_task(cls, url, task_id=None):
         _id = cls._generate_task_id(url)
+        if task_id:
+            _id = task_id
         sub_task_table = SubTask.db_col(task_id = _id)
         sub_task_table.drop()
         download_root = os.path.join(cls.download_root, _id)
@@ -38,6 +40,10 @@ class M3u8Downloader(Downloader):
         m3 = m3u8.load(url)
         total_count = 0
         for i, name in enumerate(m3.files):
+            if not name:
+                continue
+            if not name.endswith('.ts'):
+                continue
             ts_url = name
             if not ts_url.startswith('http'):
                 ts_url = os.path.join(m3.base_uri, ts_url)
