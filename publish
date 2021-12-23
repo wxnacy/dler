@@ -1,8 +1,0 @@
-#!/usr/bin/env bash
-
-TAG_NAME=$(./version.py)
-
-test -d dist/ && rm dist/*
-python setup.py sdist
-twine upload dist/dler-${TAG_NAME}.tar.gz
-./push_tag "new version ${TAG_NAME}"

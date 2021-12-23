@@ -23,16 +23,12 @@ VERSION = None
 
 # What packages are required for this module to be executed?
 REQUIRED = [
-    # 'requests', 'maya', 'records',
-    #  'typer>=0.1.1',
-    #  'youtube_dl>=2020.3.24',
-    'wpy',
-    'flask',
+    'wpy==0.6.0.*',
+    #  'flask',
     'requests',
-    'gevent',
-    'gunicorn',
+    #  'gevent',
+    #  'gunicorn',
     'rich',
-    #  'celery[redis]>=4.4.2'
 ]
 
 # What packages are optional?
@@ -125,7 +121,7 @@ setup(
             'dlwatch=dler.cli.watch:main',
             'dlm3=dler.cli.download_m3u8:main',
             'dltask=dler.cli.download_task:main',
-            'dlserver=dler.cli.server:run_with_gunicorn',
+            'dlserver=dler.server:main',
         ],
     },
     install_requires=REQUIRED,
