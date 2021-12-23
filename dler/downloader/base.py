@@ -9,6 +9,7 @@ import m3u8
 import os
 import requests
 import time
+import traceback
 from datetime import datetime
 
 from enum import Enum
@@ -150,12 +151,15 @@ class Downloader(object, metaclass=abc.ABCMeta):
                 self._format_url('/api/task/{}/sub_task/{}/download'.format(
                 self.task_id, sub_id)))
         except Exception as e:
+            self.logger.error(traceback.format_exc())
+            self.logger.error(traceback.format_stack())
             status = TaskStatus.FAILED.value
             self.sub_task_table.update({ "_id": sub_id },
                 { "status": status, "error": str(e) })
 
     def download_sub_task(self, sub_id):
         """下载子任务"""
+        self.logger.info('download_sub_task sub_id {}'.format(sub_id))
         sub_task = SubTask.find_one_by_id(sub_id, db_col=dict(task_id = self.task_id))
 
         status = TaskStatus.SUCCESS.value
@@ -164,12 +168,15 @@ class Downloader(object, metaclass=abc.ABCMeta):
                 utils.proxyon()
             flag = self._download(sub_task.download_url, sub_task.download_path)
         except Exception as e:
+            self.logger.error(traceback.format_exc())
+            self.logger.error(traceback.format_stack())
             flag = False
             status = TaskStatus.FAILED.value
             self.sub_task_table.update({ "_id": sub_id },
                 { "status": status, "error": str(e) })
             #  self.set_status(status, True)
         utils.proxyoff()
+        self.logger.info('sub_task {} download {}'.format(sub_id, flag))
         if flag:
             status = TaskStatus.SUCCESS.value
         else:
@@ -217,6 +224,7 @@ class Downloader(object, metaclass=abc.ABCMeta):
             os.makedirs(dirname)
         res = requests.get(url, headers = headers)
         status_code = res.status_code
+        cls.logger.info('download {} status {}'.format(url, status_code))
         if status_code != 200:
             return False
         with open(path, 'wb') as f:
@@ -225,6 +233,8 @@ class Downloader(object, metaclass=abc.ABCMeta):
 
     def _update_sub_task_status(self, _id, status):
         """修改子任务状态"""
+        self.logger.info('download _update_sub_task_status id {} status {}'.format(
+            _id, status))
         self.sub_task_table.update({ "_id": _id }, { "status": status })
 
     def _get_tatal_count(self):
