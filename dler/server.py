@@ -8,9 +8,16 @@
 import time
 from multiprocessing import Process
 
-from .sockets import Client
-from .sockets import Server
+from wsco import (
+    SocketServer,
+    SocketClient,
+    stop_server,
+    send_message,
+)
+
+from .constants import Constants
 from .loggers import get_logger
+from .handlers import DownloadHandler
 
 logger = get_logger(__name__)
 
@@ -21,29 +28,24 @@ def heart():
 def main():
     Command().run()
 
+_socket_params = { "port": Constants.SERVER_PORT }
+
 class Command(object):
+    client = SocketClient(**_socket_params)
 
     def _heart(self):
         """发起一次心跳，并返回服务是否正常运行"""
         try:
-            c = Client()
-            c.connect()
-            res = c.heart()
-            c.close()
+            self.client.connect()
+            res = self.client.send('heart')
+            self.client.close()
             return res.code == 0
         except:
             return False
 
     def stop(self):
         """停止服务"""
-        try:
-            c = Client()
-            c.connect()
-            c.stop_server()
-            c.close()
-        except:
-            pass
-        print('服务停止')
+        stop_server(**_socket_params)
 
     def status(self):
         """查看服务状态"""
@@ -52,7 +54,6 @@ class Command(object):
             print('服务状态：运行中')
         else:
             print('服务状态：已停止')
-
 
     def restart(self):
         """重启服务"""
@@ -66,11 +67,20 @@ class Command(object):
             print('服务已经在运行')
             return
 
-        p = Process(target=heart)
-        p.daemon = True
-        p.start()
+        #  p = Process(target=heart)
+        #  p.daemon = True
+        #  p.start()
 
-        Server().run()
+        SocketServer(
+            message_handler = DownloadHandler(),
+            **_socket_params
+        ).run()
+
+    def test(self):
+        """测试"""
+        message = 'test'
+        send_message(message = message,
+                **_socket_params)
 
     def run(self):
         import sys

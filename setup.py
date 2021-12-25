@@ -24,10 +24,9 @@ VERSION = None
 # What packages are required for this module to be executed?
 REQUIRED = [
     'wpy==0.6.0.*',
-    #  'flask',
+    'wsco',
+    'm3u8',
     'requests',
-    #  'gevent',
-    #  'gunicorn',
     'rich',
 ]
 
@@ -114,13 +113,7 @@ setup(
 
     entry_points={
         'console_scripts': [
-            'dladd=dler.cli.taskadd:main',
-            'dl=dler.cli.download:main',
-            'dlwork=dler.cli.work:main',
-            'dlstatus=dler.cli.status:main',
-            'dlwatch=dler.cli.watch:main',
-            'dlm3=dler.cli.download_m3u8:main',
-            'dltask=dler.cli.download_task:main',
+            'dler=dler.cli.client:main',
             'dlserver=dler.server:main',
         ],
     },

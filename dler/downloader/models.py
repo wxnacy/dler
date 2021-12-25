@@ -7,9 +7,12 @@
 
 import os
 import uuid
-from lfsdb import FileStorage
-from lfsdb import FSModel
-from lfsdb import FSColumn
+try:
+    from lfsdb import FileStorage
+    from lfsdb import FSModel
+    from lfsdb import FSColumn
+except:
+    pass
 from datetime import datetime
 
 from .enum import TaskStatus
