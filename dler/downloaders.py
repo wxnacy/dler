@@ -18,8 +18,6 @@ class Download(object):
     pass
 
 
-
-
 def download_url(url, path):
     """下载 url 到指定路径"""
     headers = {

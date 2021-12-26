@@ -5,6 +5,8 @@
 
 """
 
+import os
+
 __all__ = ['Constants']
 
 class Constants():
@@ -12,3 +14,4 @@ class Constants():
     SERVER_HOST = 'localhost'
     MAX_TASK_PROCESS = 2
     MAX_SUB_TASK_PROCESS = 8
+    DOWNLOAD_DIR = os.path.expanduser('~/Downloads')
