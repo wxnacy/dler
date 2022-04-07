@@ -7,17 +7,14 @@
 
 import os
 import uuid
-try:
-    from lfsdb import FileStorage
-    from lfsdb import FSModel
-    from lfsdb import FSColumn
-except:
-    pass
+    #  from lfsdb import FileStorage
+from lfsdb.db.models import FSModel
+from lfsdb.db.models import FSColumn
 from datetime import datetime
 
 from .enum import TaskStatus
 
-fs = FileStorage()
+#  fs = FileStorage()
 
 class BaseModel(FSModel):
     db = 'download'

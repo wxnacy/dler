@@ -15,3 +15,4 @@ class Constants():
     MAX_TASK_PROCESS = 2
     MAX_SUB_TASK_PROCESS = 8
     DOWNLOAD_DIR = os.path.expanduser('~/Downloads')
+    DB_PATH = os.path.expanduser('~/.dler.db')

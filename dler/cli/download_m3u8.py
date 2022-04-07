@@ -7,8 +7,8 @@
 
 from concurrent.futures import ThreadPoolExecutor
 
-from dler.downloader.m3u8_downloader import M3u8Downloader
-from dler.downloader.models import Task
+from dler.downloaders import M3u8Downloader
+from dler.downloaders import download_task
 
 def main():
     import sys
@@ -23,7 +23,4 @@ def main():
     task_id = url
     if url.startswith('http'):
         task_id = M3u8Downloader.add_task(url, arg_task_id)
-    print(task_id)
-    downloader = M3u8Downloader(task_id)
-    #  downloader.is_async = False
-    downloader.start()
+    download_task(task_id)

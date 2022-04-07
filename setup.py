@@ -23,10 +23,12 @@ VERSION = None
 
 # What packages are required for this module to be executed?
 REQUIRED = [
-    'wpy==0.6.0.*',
+    'lfsdb',
+    'wpy',
     'wsco',
     'm3u8',
     'requests',
+    'sqlalchemy',
     'rich',
 ]
 
@@ -113,7 +115,8 @@ setup(
 
     entry_points={
         'console_scripts': [
-            'dler=dler.cli.client:main',
+            'dler=dler.cli.download_m3u8:main',
+            'dltask=dler.cli.download_task:main',
             'dlserver=dler.server:main',
         ],
     },
