@@ -96,29 +96,9 @@ class BaseDB(object):
         """
         cls.update({"id": _id}, { "status": TaskStatus.SUCCESS.value })
 
-class Task(Base, BaseDB):
-    __tablename__ = 'task'
+    def dict(self):
+        return self.__dict__
 
-    id = Column(String(32), primary_key=True)
-    name = Column(String(128))
-    url = Column(String(1024))
-    path = Column(String(512))
-    status = Column(String(16), default=TaskStatus.WAITING.value)
-    filetype = Column(String(16), default='')
-    success_count = Column(Integer(), default=0)
-    total_count = Column(Integer(), default=0)
-    progress = Column(Float(), default=0)
-    create_time = Column(DATETIME(), default=datetime.now)
-    update_time = Column(DATETIME(), default=datetime.now)
-
-class SubTask(BaseDB, Base):
-    __tablename__ = 'sub_task'
-
-    id = Column(String(32), primary_key=True)
-    task_id = Column(String(32))
-    url = Column(String(1024))
-    path = Column(String(512))
-    status = Column(String(16), default=TaskStatus.WAITING.value)
 
 def init_db():
     """创建数据库

@@ -8,7 +8,7 @@ from sqlalchemy import Column, Integer, String, Float, DATETIME, Enum
 from dler.models import Base, BaseDB
 from dler.task.enums import TaskStatusEnum
 
-class TaskModel(Base, BaseDB):
+class TaskModel(BaseDB, Base):
     __tablename__ = 'task'
 
     id = Column(String(32), primary_key=True)
