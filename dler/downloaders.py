@@ -14,9 +14,9 @@ from wpy.format import format_float
 
 from dler.downloader.progress import progress as dl_progress
 
-from .loggers import get_logger
-from .models import Task
-from .models import SubTask
+from dler.loggers import get_logger
+from dler.task.models import TaskModel as  Task
+from dler.task.models import SubTaskModel as SubTask
 
 logger = get_logger('downloaders')
 
