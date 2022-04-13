@@ -115,7 +115,7 @@ setup(
 
     entry_points={
         'console_scripts': [
-            'dler=dler.cli.download_m3u8:main',
+            'dler=dler.cli.download:main',
             'dltask=dler.cli.download_task:main',
             'dlserver=dler.server:main',
         ],

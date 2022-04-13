@@ -18,15 +18,6 @@ class DownloadTask(BaseModel):
     url: str
     path: str
 
-#  def find_sub_tasks(task_id):
-    #  dirname = f'/Users/wxnacy/.lfsdb/data/download/sub_task-{task_id}'
-    #  items = []
-    #  for name in os.listdir(dirname):
-        #  path = os.path.join(dirname, name)
-        #  with open(path) as f:
-            #  data = json.loads(''.join(f.readlines()))
-            #  items.append(data)
-    #  return items
 
 class M3u8Tasker(BaseModel, MultiTasker):
     download_dir: str = ""
@@ -36,7 +27,8 @@ class M3u8Tasker(BaseModel, MultiTasker):
 
     class Config:
         task_type: str = 'm3u8'
-        download_dir: str = os.path.expanduser('~/Downloads')
+        #  download_dir: str = os.path.expanduser('~/Downloads')
+        download_dir: str = os.path.expanduser('/Users/wxnacy/Downloads/website/static/jable/m3u8')
 
     def build_task(self) -> dict:
         detail = {}
@@ -47,15 +39,10 @@ class M3u8Tasker(BaseModel, MultiTasker):
         return {}
 
     def build_sub_tasks(self) -> List[SubTaskModel]:
-        #  sub_tasks = find_sub_tasks(self.video_id)
-        #  res = []
-        #  #  for detail in sub_tasks[:200]:
-        #  for detail in sub_tasks:
-            #  res.append(SubTaskModel(
-                #  task_type = 'download_ts', detail = detail))
 
         sub_tasks = []
         if self.url:
+            sub_tasks.append(self.build_main_sub_task())
             for ts_url in self.generate_ts_paths():
                 _path = os.path.join(self.download_dir,
                     os.path.basename(ts_url))
@@ -65,6 +52,13 @@ class M3u8Tasker(BaseModel, MultiTasker):
             return sub_tasks
 
         return []
+
+    def build_main_sub_task(self) -> SubTaskModel:
+        _path = os.path.join(self.download_dir,
+            os.path.basename(self.url))
+        detail = DownloadTask(url = self.url, path = _path).dict()
+        return SubTaskModel(detail = detail, task_type = 'download_ts')
+
 
     def build_download_dir(self):
         dl_dir = os.path.join(self.Config.download_dir,
@@ -87,7 +81,7 @@ class M3u8Tasker(BaseModel, MultiTasker):
 
 @M3u8Tasker.trigger_sub_task('download_ts')
 def sub_task_download_ts(sub_task) -> bool:
-    return True
+    #  return True
     task = DownloadTask(**sub_task.detail)
     #  print(task.download_path)
     #  path = os.path.basename(task.download_path)
