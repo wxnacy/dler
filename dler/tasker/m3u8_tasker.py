@@ -69,31 +69,12 @@ class M3u8Tasker(BaseModel, MultiTasker):
             ts_url = name
             if not ts_url.startswith('http'):
                 ts_url = os.path.join(m3.base_uri, ts_url)
-            print(i, ts_url)
+            #  print(i, ts_url)
             yield ts_url
 
 
 @M3u8Tasker.trigger_sub_task('download_ts')
 def sub_task_download_ts(sub_task) -> bool:
-    #  return True
     task = DownloadTaskModel(**sub_task.detail)
-    #  print(task.download_path)
-    #  path = os.path.basename(task.download_path)
-    #  path = os.path.expanduser('~/Downloads/dltest/') + path
     path = task.path
-    #  print(path)
     return download_url(task.url, path)
-
-
-if __name__ == "__main__":
-    import time
-    import sys
-    args = sys.argv[1:]
-    video_id = args[0]
-    tasker = M3u8Tasker(url = video_id)
-    tasker.build()
-    b = time.time()
-    tasker.run()
-    print(time.time() - b)
-
-
