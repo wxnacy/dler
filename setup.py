@@ -23,13 +23,15 @@ VERSION = None
 
 # What packages are required for this module to be executed?
 REQUIRED = [
-    'lfsdb',
+    'multitasker',
+    #  'lfsdb',
     'wpy',
     'wsco',
     'm3u8',
     'requests',
     'sqlalchemy',
     'rich',
+    'typer',
 ]
 
 # What packages are optional?
@@ -115,9 +117,9 @@ setup(
 
     entry_points={
         'console_scripts': [
-            'dler=dler.cli.download:main',
-            'dltask=dler.cli.download_task:main',
-            'dlserver=dler.server:main',
+            'dler=dler.cli.main:main',
+            #  'dltask=dler.cli.download_task:main',
+            #  'dlserver=dler.server:main',
         ],
     },
     install_requires=REQUIRED,

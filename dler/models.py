@@ -8,12 +8,11 @@ from sqlalchemy import Column, Integer, String, Float, DATETIME, Enum
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-from datetime import datetime
 import uuid
-from dler.constants import Constants
+from dler.constants import DB_PATH
 from dler.enum import TaskStatus
 
-SQLALCHEMY_DATABASE_URI = 'sqlite:///' + Constants.DB_PATH
+SQLALCHEMY_DATABASE_URI = 'sqlite:///' + DB_PATH
 engine = create_engine(SQLALCHEMY_DATABASE_URI, echo=False)
 Base = declarative_base()
 Session = sessionmaker(bind=engine)

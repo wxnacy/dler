@@ -7,13 +7,13 @@
 
 from wpy.base import BaseEnum
 
-class TaskStatus(BaseEnum):
-    WAITING = 'waiting'
-    SUCCESS = 'success'
-    FAILED = 'failed'
-    PROCESS = 'process'
-    STOP = 'stop'
-    SLEEP = 'sleep'
+#  class TaskStatus(BaseEnum):
+    #  WAITING = 'waiting'
+    #  SUCCESS = 'success'
+    #  FAILED = 'failed'
+    #  PROCESS = 'process'
+    #  STOP = 'stop'
+    #  SLEEP = 'sleep'
 
 class FileType(BaseEnum):
     IMAGE = 'image'

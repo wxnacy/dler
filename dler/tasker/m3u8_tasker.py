@@ -6,29 +6,23 @@
 from multitasker import MultiTasker, SubTaskModel
 
 import os
-import json
 import m3u8
 from typing import List
 from pydantic import BaseModel
 
 from dler.downloaders import download_url
-
-
-class DownloadTask(BaseModel):
-    url: str
-    path: str
+from .base import BaseConfig
+from .models import DownloadTaskModel
 
 
 class M3u8Tasker(BaseModel, MultiTasker):
     download_dir: str = ""
 
     url: str
-    #  video_id: str = ""
 
-    class Config:
+    class Config(BaseConfig):
         task_type: str = 'm3u8'
-        #  download_dir: str = os.path.expanduser('~/Downloads')
-        download_dir: str = os.path.expanduser('/Users/wxnacy/Downloads/website/static/jable/m3u8')
+        #  download_dir: str = os.path.expanduser('/Users/wxnacy/Downloads/website/static/jable/m3u8')
 
     def build_task(self) -> dict:
         detail = {}
@@ -46,7 +40,7 @@ class M3u8Tasker(BaseModel, MultiTasker):
             for ts_url in self.generate_ts_paths():
                 _path = os.path.join(self.download_dir,
                     os.path.basename(ts_url))
-                detail = DownloadTask(url = ts_url, path = _path).dict()
+                detail = DownloadTaskModel(url = ts_url, path = _path).dict()
                 st = SubTaskModel(detail = detail, task_type = 'download_ts')
                 sub_tasks.append(st)
             return sub_tasks
@@ -56,7 +50,7 @@ class M3u8Tasker(BaseModel, MultiTasker):
     def build_main_sub_task(self) -> SubTaskModel:
         _path = os.path.join(self.download_dir,
             os.path.basename(self.url))
-        detail = DownloadTask(url = self.url, path = _path).dict()
+        detail = DownloadTaskModel(url = self.url, path = _path).dict()
         return SubTaskModel(detail = detail, task_type = 'download_ts')
 
 
@@ -82,7 +76,7 @@ class M3u8Tasker(BaseModel, MultiTasker):
 @M3u8Tasker.trigger_sub_task('download_ts')
 def sub_task_download_ts(sub_task) -> bool:
     #  return True
-    task = DownloadTask(**sub_task.detail)
+    task = DownloadTaskModel(**sub_task.detail)
     #  print(task.download_path)
     #  path = os.path.basename(task.download_path)
     #  path = os.path.expanduser('~/Downloads/dltest/') + path
