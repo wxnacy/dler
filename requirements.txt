@@ -22,3 +22,12 @@ typer == 0.1.1
 # pydler/pydler/run.py: 13
 # pydler/pydler/tasks.py: 10
 youtube_dl == 2020.3.24
+
+python = "3.10"
+multitasker = "^0.0.2"
+wpy = "^0.6.1"
+wsco = "^0.0.1"
+m3u8 = "^1.0.0"
+requests = "^2.27.1"
+SQLAlchemy = "^1.4.35"
+typer = "^0.4.1"

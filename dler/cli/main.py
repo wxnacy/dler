@@ -5,18 +5,37 @@
 
 """
 import typer
+from multitasker import MultiTasker
 from typer import (
-    Argument
+    Argument,
+    Option
 )
 
-from dler.tasker.m3u8_tasker import M3u8Tasker
+from dler.tasker import (
+    M3u8Tasker,
+    FileTasker
+)
 
 app = typer.Typer()
 
+def conver_tasker(url: str) -> MultiTasker:
+    Tasker = None
+    if url.endswith('.m3u8'):
+        Tasker = M3u8Tasker
+    else:
+        Tasker = FileTasker
+
+    return Tasker(url)
+
 @app.command()
-def start(url: str = Argument(..., help="URL 路径")):
+def start(
+    url: str = Argument(..., help="URL 路径"),
+    name: str = Option(None, '-n', '--name', help="下载文件保存名")
+):
     """开始下载任务"""
-    tasker = M3u8Tasker(url = url)
+
+    tasker = conver_tasker(url)
+    tasker.filename = name
     tasker.build()
     tasker.run()
 

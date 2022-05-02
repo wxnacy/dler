@@ -6,3 +6,9 @@ class BaseConfig:
     task_type: str
     download_dir: str = ENV_DOWNLOAD_DIR or DOWNLOAD_DIR
 
+class BaseTasker:
+    url: str
+    filename: str = ""
+
+    def __init__(self, url: str):
+        self.url = url

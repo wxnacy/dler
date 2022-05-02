@@ -16,7 +16,8 @@ class Constants():
     MAX_SUB_TASK_PROCESS = 8
 
 
-ENV_DOWNLOAD_DIR: str = os.path.expanduser(os.getenv("DLER_DOWNLOAD_DIR"))
+ENV_DOWNLOAD_DIR: str = os.path.expanduser(os.getenv("DLER_DOWNLOAD_DIR", ''))
 
 DOWNLOAD_DIR: str = os.path.expanduser('~/Downloads')
 DB_PATH: str = os.path.expanduser('~/dler.db')
+SEGMENT_SIZE: int = 1024 * 1024 * 16

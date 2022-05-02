@@ -11,18 +11,16 @@ from typing import List
 from pydantic import BaseModel
 
 from dler.downloaders import download_url
-from .base import BaseConfig
+from .base import BaseConfig, BaseTasker
 from .models import DownloadTaskModel
+from . import tasktools
 
 
-class M3u8Tasker(BaseModel, MultiTasker):
+class M3u8Tasker(MultiTasker, BaseTasker):
     download_dir: str = ""
-
-    url: str
 
     class Config(BaseConfig):
         task_type: str = 'm3u8'
-        #  download_dir: str = os.path.expanduser('/Users/wxnacy/Downloads/website/static/jable/m3u8')
 
     def build_task(self) -> dict:
         detail = {}
@@ -41,7 +39,7 @@ class M3u8Tasker(BaseModel, MultiTasker):
                 _path = os.path.join(self.download_dir,
                     os.path.basename(ts_url))
                 detail = DownloadTaskModel(url = ts_url, path = _path).dict()
-                st = SubTaskModel(detail = detail, task_type = 'download_ts')
+                st = SubTaskModel(detail = detail, task_type = 'download')
                 sub_tasks.append(st)
             return sub_tasks
 
@@ -51,7 +49,7 @@ class M3u8Tasker(BaseModel, MultiTasker):
         _path = os.path.join(self.download_dir,
             os.path.basename(self.url))
         detail = DownloadTaskModel(url = self.url, path = _path).dict()
-        return SubTaskModel(detail = detail, task_type = 'download_ts')
+        return SubTaskModel(detail = detail, task_type = 'download')
 
 
     def build_download_dir(self):
@@ -73,8 +71,4 @@ class M3u8Tasker(BaseModel, MultiTasker):
             yield ts_url
 
 
-@M3u8Tasker.trigger_sub_task('download_ts')
-def sub_task_download_ts(sub_task) -> bool:
-    task = DownloadTaskModel(**sub_task.detail)
-    path = task.path
-    return download_url(task.url, path)
+M3u8Tasker.trigger_sub_task('download')(tasktools.download)
