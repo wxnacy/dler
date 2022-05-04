@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "dler"
-version = "0.5.2"
+version = "0.5.3"
 description = "python video downloader"
 authors = ["wxnacy <371032668@qq.com>"]
 license = "MIT"
@@ -10,9 +10,8 @@ dler = "dler.cli.main:app"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-wpy = "^0.6.1"
 wsco = "^0.0.1"
-multitasker = "^0.0.3"
+multitasker = "^0.0.4"
 m3u8 = "^2.0.0"
 requests = "^2.27.1"
 typer = "^0.4.1"
