@@ -5,11 +5,9 @@
 
 """
 import typer
+from urllib.parse import urlparse
 from multitasker import MultiTasker
-from typer import (
-    Argument,
-    Option
-)
+from typer import Argument, Option
 
 from dler.tasker import (
     M3u8Tasker,
@@ -19,8 +17,10 @@ from dler.tasker import (
 app = typer.Typer()
 
 def conver_tasker(url: str) -> MultiTasker:
+    parse = urlparse(url)
+    path = parse.path
     Tasker = None
-    if url.endswith('.m3u8'):
+    if path.endswith('.m3u8'):
         Tasker = M3u8Tasker
     else:
         Tasker = FileTasker
@@ -30,7 +30,8 @@ def conver_tasker(url: str) -> MultiTasker:
 @app.command()
 def start(
     url: str = Argument(..., help="URL 路径"),
-    name: str = Option(None, '-n', '--name', help="下载文件保存名")
+    name: str = Option(None, '-n', '--name', help="下载文件保存名"),
+    trans: str = Option(None, '-t', '--trans', help="转码"),
 ):
     """开始下载任务"""
 
@@ -38,6 +39,10 @@ def start(
     tasker.filename = name
     tasker.build()
     tasker.run()
+
+    if trans:
+        tasker.transcoding(trans)
+
 
 @app.command()
 def run():

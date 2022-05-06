@@ -1,4 +1,4 @@
-import os
+from urllib.parse import urlparse, ParseResult
 
 from dler.constants import DOWNLOAD_DIR, ENV_DOWNLOAD_DIR
 
@@ -9,6 +9,8 @@ class BaseConfig:
 class BaseTasker:
     url: str
     filename: str = ""
+    urlparse: ParseResult
 
     def __init__(self, url: str):
         self.url = url
+        self.urlparse = urlparse(url)

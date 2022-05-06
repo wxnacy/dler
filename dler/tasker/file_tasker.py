@@ -9,10 +9,9 @@ import requests
 import os
 import shutil
 import time
-from typing import List
+from typing import List, Dict
 from pydantic import BaseModel, Field
 
-from dler.downloaders import download_url
 from dler.constants import SEGMENT_SIZE
 from .base import BaseConfig, BaseTasker
 from .models import (
@@ -22,8 +21,33 @@ from .models import (
 from . import tasktools
 
 class HeaderModel(BaseModel):
-    content_length: int = Field(..., alias='Content-Length')
+    content_type: str = Field(None, alias='Content-Type')
+    content_length: int = Field(None, alias='Content-Length')
+    server: str = Field(None, alias='Server')
+    date: str = Field(None, alias='Date')
+    connection: str = Field(None, alias='Connection')
     accept_ranges: str = Field(None, alias='Accept-Ranges')
+    etag: str = Field(None, alias='ETag')
+    cache_control: str = Field(None, alias='Cache-Control')
+    expires: str = Field(None, alias='Expires')
+    last_modified: str = Field(None, alias='Last-Modified',)
+
+    class Meta:
+        origin_data: Dict[str, str] = {}
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        self.Meta.origin_data = kwargs
+
+    def __getitem__(self, key: str) -> str:
+        return self.Meta.origin_data[key]
+
+    def get(self, key: str) -> str:
+        return self.Meta.origin_data.get(key)
+
+    def __setattr__(self, key: str, value: str) -> AttributeError:
+        raise AttributeError('\'Header\' object does not support attribute assignment')
 
 
 class FileDetailModel(BaseModel):
@@ -40,7 +64,7 @@ class FileTasker(MultiTasker, BaseTasker):
         task_type: str = 'video'
 
     def build_task(self) -> dict:
-        detail = {}
+        #  detail = {}
 
         #  filename = 'test'
         filename = self.filename or os.path.basename(self.url)
