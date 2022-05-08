@@ -9,45 +9,14 @@ import requests
 import os
 import shutil
 import time
-from typing import List, Dict
-from pydantic import BaseModel, Field
+from typing import List
+from pydantic import BaseModel
 
 from dler.constants import SEGMENT_SIZE
+from dler.models import HeaderModel
 from .base import BaseConfig, BaseTasker
-from .models import (
-    DownloadTaskModel,
-    MergeTaskModel
-)
+from .models import DownloadTaskModel, MergeTaskModel
 from . import tasktools
-
-class HeaderModel(BaseModel):
-    content_type: str = Field(None, alias='Content-Type')
-    content_length: int = Field(None, alias='Content-Length')
-    server: str = Field(None, alias='Server')
-    date: str = Field(None, alias='Date')
-    connection: str = Field(None, alias='Connection')
-    accept_ranges: str = Field(None, alias='Accept-Ranges')
-    etag: str = Field(None, alias='ETag')
-    cache_control: str = Field(None, alias='Cache-Control')
-    expires: str = Field(None, alias='Expires')
-    last_modified: str = Field(None, alias='Last-Modified',)
-
-    class Meta:
-        origin_data: Dict[str, str] = {}
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-        self.Meta.origin_data = kwargs
-
-    def __getitem__(self, key: str) -> str:
-        return self.Meta.origin_data[key]
-
-    def get(self, key: str) -> str:
-        return self.Meta.origin_data.get(key)
-
-    def __setattr__(self, key: str, value: str) -> AttributeError:
-        raise AttributeError('\'Header\' object does not support attribute assignment')
 
 
 class FileDetailModel(BaseModel):
@@ -56,29 +25,18 @@ class FileDetailModel(BaseModel):
 
 class FileTasker(BaseTasker):
     filepath: str
-    #  download_dir: str
     cache_dir: str
     detail: FileDetailModel
 
     class Config(BaseConfig):
-        task_type: str = 'video'
+        task_type: str = 'file'
 
     def build_task(self) -> dict:
-        #  detail = {}
-
-        #  filename = 'test'
-        filename = self.filename or os.path.basename(self.url)
-        self.cache_dir = os.path.join(self.Config.download_dir,
-            f'.dler/{filename}')
-        #  print(self.cache_dir)
-        if not os.path.exists(self.cache_dir):
-            os.makedirs(self.cache_dir)
 
         res = requests.head(self.url)
         headers = dict(res.headers)
         header = HeaderModel(**headers)
         self.detail = FileDetailModel(headers = header)
-        self.filepath = os.path.join(self.Config.download_dir, filename)
 
         return self.detail.dict()
 
@@ -86,7 +44,7 @@ class FileTasker(BaseTasker):
 
         sub_tasks = []
         headers = self.detail.headers
-        if headers.accept_ranges == 'bytes':
+        if headers.accept_ranges == 'bytes' and headers.content_length > SEGMENT_SIZE:
             length = headers.content_length
             merge_files = []
             total_page = int(length / SEGMENT_SIZE) + 1
@@ -117,6 +75,14 @@ class FileTasker(BaseTasker):
             sub_tasks.append(SubTaskModel(
                 task_type = 'merge', detail = merge_task.dict()
             ))
+            return sub_tasks
+
+        # 直接下载
+        path = os.path.join(self.Config.download_dir, self.filepath)
+        sub_detail = DownloadTaskModel(url = self.url, path = path)
+        sub_task = SubTaskModel(
+            task_type = 'download', detail = sub_detail.dict())
+        sub_tasks.append(sub_task)
 
         return sub_tasks
 
@@ -133,14 +99,11 @@ def sub_task_merge(sub_task) -> bool:
             if os.path.exists(merge_file):
                 merge_map[merge_file] = True
 
-        #  print(len(merge_map))
         time.sleep(1)
 
     with open(task.filepath, 'wb') as wf:
         for merge_file in task.merge_files:
-            #  print(merge_file)
             with open(merge_file, 'rb') as rf:
                 wf.write(rf.read())
 
-    shutil.rmtree(task.cache_dir)
     return True
