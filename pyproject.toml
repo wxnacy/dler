@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "dler"
-version = "0.5.7"
+version = "0.5.8"
 description = "python video downloader"
 authors = ["wxnacy <371032668@qq.com>"]
 license = "MIT"
