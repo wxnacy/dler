@@ -7,7 +7,6 @@ from multitasker import SubTaskModel
 import requests
 
 import os
-import shutil
 import time
 from typing import List
 from pydantic import BaseModel
@@ -24,8 +23,6 @@ class FileDetailModel(BaseModel):
 
 
 class FileTasker(BaseTasker):
-    filepath: str
-    cache_dir: str
     detail: FileDetailModel
 
     class Config(BaseConfig):
@@ -70,7 +67,6 @@ class FileTasker(BaseTasker):
             # 增加 merge 子任务
             merge_task = MergeTaskModel(
                 filepath = self.filepath, merge_files = merge_files,
-                cache_dir = self.cache_dir
             )
             sub_tasks.append(SubTaskModel(
                 task_type = 'merge', detail = merge_task.dict()
@@ -78,8 +74,7 @@ class FileTasker(BaseTasker):
             return sub_tasks
 
         # 直接下载
-        path = os.path.join(self.Config.download_dir, self.filepath)
-        sub_detail = DownloadTaskModel(url = self.url, path = path)
+        sub_detail = DownloadTaskModel(url = self.url, path = self.filepath)
         sub_task = SubTaskModel(
             task_type = 'download', detail = sub_detail.dict())
         sub_tasks.append(sub_task)
