@@ -5,43 +5,30 @@
 
 """
 import typer
-from urllib.parse import urlparse
-from multitasker import MultiTasker
+import time
 from typer import Argument, Option
 
-from dler.tasker import (
-    M3u8Tasker,
-    FileTasker
-)
+from dler import Dler
 
 app = typer.Typer()
-
-def conver_tasker(url: str) -> MultiTasker:
-    parse = urlparse(url)
-    path = parse.path
-    Tasker = None
-    if path.endswith('.m3u8'):
-        Tasker = M3u8Tasker
-    else:
-        Tasker = FileTasker
-
-    return Tasker(url)
 
 @app.command()
 def start(
     url: str = Argument(..., help="URL 路径"),
     name: str = Option(None, '-n', '--name', help="下载文件保存名"),
-    trans: str = Option(None, '-t', '--trans', help="转码"),
+    download_dir: str = Option(None, '--download-dir', help="下载目录"),
 ):
     """开始下载任务"""
 
-    tasker = conver_tasker(url)
-    tasker.filename = name
-    tasker.build()
-    tasker.run()
+    begin = time.time()
+    config = {}
+    if download_dir:
+        config['download_dir'] = download_dir
+    dl = Dler(url, filename = name, config = config)
+    dl.run()
 
-    if trans:
-        tasker.transcoding(trans)
+    cost = time.time() - begin
+    typer.echo(f'下载完成，耗时: {cost}')
 
 
 @app.command()

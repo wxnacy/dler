@@ -3,7 +3,7 @@
 # Author: wxnacy <wxnacy@gmail.com>
 # Description: m3u8 tasker
 
-from multitasker import MultiTasker, SubTaskModel
+from multitasker import SubTaskModel
 import requests
 
 import os
@@ -54,7 +54,7 @@ class FileDetailModel(BaseModel):
     headers: HeaderModel
 
 
-class FileTasker(MultiTasker, BaseTasker):
+class FileTasker(BaseTasker):
     filepath: str
     #  download_dir: str
     cache_dir: str
@@ -70,6 +70,7 @@ class FileTasker(MultiTasker, BaseTasker):
         filename = self.filename or os.path.basename(self.url)
         self.cache_dir = os.path.join(self.Config.download_dir,
             f'.dler/{filename}')
+        #  print(self.cache_dir)
         if not os.path.exists(self.cache_dir):
             os.makedirs(self.cache_dir)
 
@@ -132,12 +133,12 @@ def sub_task_merge(sub_task) -> bool:
             if os.path.exists(merge_file):
                 merge_map[merge_file] = True
 
-        print(len(merge_map))
+        #  print(len(merge_map))
         time.sleep(1)
 
     with open(task.filepath, 'wb') as wf:
         for merge_file in task.merge_files:
-            print(merge_file)
+            #  print(merge_file)
             with open(merge_file, 'rb') as rf:
                 wf.write(rf.read())
 
