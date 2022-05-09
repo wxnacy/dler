@@ -12,6 +12,7 @@ class Dler:
 
         """
         self.tasker.build()
+        self.tasker.before_run()
         self.tasker.run()
         self.tasker.after_run()
         self.tasker.clear()

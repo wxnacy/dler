@@ -81,6 +81,12 @@ class FileTasker(BaseTasker):
 
         return sub_tasks
 
+    def run(self):
+        if os.path.exists(self.filepath):
+            print(f"{self.filename} 已经下载完成")
+            return
+        super().run()
+
 
 FileTasker.trigger_sub_task('download')(tasktools.download)
 

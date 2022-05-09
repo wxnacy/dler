@@ -206,7 +206,7 @@ python-versions = ">=3.7"
 
 [[package]]
 name = "multitasker"
-version = "0.0.5"
+version = "0.0.6"
 description = "多任务处理器"
 category = "main"
 optional = false
@@ -590,7 +590,7 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "fdd9a3e60577683fbc4ba6053d4328bc578bc07e35e8af1e380f280de81ad3fb"
+content-hash = "ee4c78f9e2c7a9d9f9f2f0fafc194a9805f8a5add92796d8a442c3f41d15d46f"
 
 [metadata.files]
 alabaster = [
@@ -844,8 +844,8 @@ markupsafe = [
     {file = "MarkupSafe-2.1.1.tar.gz", hash = "sha256:7f91197cc9e48f989d12e4e6fbc46495c446636dfc81b9ccf50bb0ec74b91d4b"},
 ]
 multitasker = [
-    {file = "multitasker-0.0.5-py3-none-any.whl", hash = "sha256:25f6726386192f6b703487b22af81ae7e9cba1433885fb3da12f3ad5d0990f1e"},
-    {file = "multitasker-0.0.5.tar.gz", hash = "sha256:1714b7c6ccabf1bac65feaadbb45308e9493f7bab3bf9c35e81994cf8e1799df"},
+    {file = "multitasker-0.0.6-py3-none-any.whl", hash = "sha256:dbfd3244edb6ff2e67bca951cee5317d94a86afe80a471e5e8f9507001709d28"},
+    {file = "multitasker-0.0.6.tar.gz", hash = "sha256:d37d5bcc186e47ac7d80500c27b678243d628e0d983c1b82e43ea32baaeb4d0e"},
 ]
 packaging = [
     {file = "packaging-21.3-py3-none-any.whl", hash = "sha256:ef103e05f519cdc783ae24ea4e2e0f508a9c99b2d4969652eed6a2e1ea5bd522"},
