@@ -7,7 +7,7 @@ from multitasker import SubTaskModel
 
 import os
 import m3u8
-from m3u8.model import Segment, Key
+from m3u8.model import Segment, Key, M3U8
 from urllib.parse import urlparse
 from typing import List
 from wpy.functools import run_shell
@@ -20,6 +20,7 @@ from . import tasktools
 class M3u8Tasker(BaseTasker):
     download_dir: str = ""
     filepath: str = ""
+    m3: M3U8
 
     class Config(BaseConfig):
         task_type: str = 'm3u8'
@@ -66,6 +67,7 @@ class M3u8Tasker(BaseTasker):
 
     def generate_urls(self):
         m3 = m3u8.load(self.url)
+        self.m3 = m3
         name: str
         for i, name in enumerate(m3.files):
             if not name:
@@ -84,9 +86,12 @@ class M3u8Tasker(BaseTasker):
             self.transcoding(self.filetype)
 
     def transcoding(self, trans_type: str):
-        print("开始转码")
         trans_path = os.path.join(self.Config.download_dir,
                 os.path.basename(self.filepath).replace('m3u8', trans_type))
+        if os.path.exists(trans_path):
+            print("已经转码成功")
+            return
+        print("开始转码")
         cmd = f'ffmpeg -allowed_extensions ALL -i {self.filepath} -bsf:a aac_adtstoasc -vcodec copy -c copy -crf 50 {trans_path}'
         run_shell(cmd)
 
