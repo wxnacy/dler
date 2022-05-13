@@ -15,21 +15,30 @@ from wpy.functools import run_shell
 from .base import BaseConfig, BaseTasker
 from .models import DownloadTaskModel
 from . import tasktools
+from .exceptions import FileExistsException
 
 
 class M3u8Tasker(BaseTasker):
-    download_dir: str = ""
-    filepath: str = ""
+    m3u8_download_dir: str = ""
+    m3u8path: str = ""
     m3: M3U8
 
     class Config(BaseConfig):
         task_type: str = 'm3u8'
 
+    def _init(self):
+        super()._init()
+        self.m3u8_download_dir = self.build_download_dir()
+
+        filename = f'{self.filename.split(".")[0]}.m3u8' or os.path.basename(
+            self.urlparse.path)
+        _path = os.path.join(self.m3u8_download_dir, filename)
+        self.m3u8path = _path
+
     def build_task(self) -> dict:
         detail = {}
         if self.url:
             detail['url'] = self.url
-            self.download_dir = self.build_download_dir()
 
         return {}
 
@@ -39,7 +48,7 @@ class M3u8Tasker(BaseTasker):
         if self.url:
             sub_tasks.append(self.build_dl_m3u8_sub_task())
             for ts_url in self.generate_urls():
-                _path = os.path.join(self.download_dir,
+                _path = os.path.join(self.m3u8_download_dir,
                     os.path.basename(ts_url))
                 detail = DownloadTaskModel(url = ts_url, path = _path).dict()
                 st = SubTaskModel(detail = detail, task_type = 'download')
@@ -49,18 +58,14 @@ class M3u8Tasker(BaseTasker):
         return []
 
     def build_dl_m3u8_sub_task(self) -> SubTaskModel:
-        filename = f'{self.filename.split(".")[0]}.m3u8' or os.path.basename(
-            self.urlparse.path)
-        _path = os.path.join(self.download_dir, filename)
-        self.filepath = _path
-        detail = DownloadTaskModel(url = self.url, path = _path).dict()
+        detail = DownloadTaskModel(url = self.url,
+            path = self.m3u8path).dict()
         return SubTaskModel(detail = detail, task_type = 'download_m3u8')
-
 
     def build_download_dir(self):
         filename = self.filename.split('.')[0] or os.path.basename(
             self.url).split('.')[0]
-        dl_dir = os.path.join(self.Config.download_dir, filename)
+        dl_dir = os.path.join(self.download_dir, filename)
         if not os.path.exists(dl_dir):
             os.mkdir(dl_dir)
         return dl_dir
@@ -86,13 +91,10 @@ class M3u8Tasker(BaseTasker):
             self.transcoding(self.filetype)
 
     def transcoding(self, trans_type: str):
-        trans_path = os.path.join(self.Config.download_dir,
-                os.path.basename(self.filepath).replace('m3u8', trans_type))
-        if os.path.exists(trans_path):
-            print("已经转码成功")
-            return
+        if os.path.exists(self.filepath):
+            raise FileExistsException()
         print("开始转码")
-        cmd = f'ffmpeg -allowed_extensions ALL -i {self.filepath} -bsf:a aac_adtstoasc -vcodec copy -c copy -crf 50 {trans_path}'
+        cmd = f'ffmpeg -allowed_extensions ALL -i {self.m3u8path} -bsf:a aac_adtstoasc -vcodec copy -c copy -crf 50 {self.filepath}'
         run_shell(cmd)
 
 M3u8Tasker.trigger_sub_task('download')(tasktools.download)

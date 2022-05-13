@@ -5,6 +5,7 @@ from urllib.parse import urlparse, ParseResult
 from multitasker import MultiTasker
 
 from dler import constants
+from .exceptions import FileExistsException
 
 class BaseConfig:
     task_type: str
@@ -56,6 +57,12 @@ class BaseTasker(MultiTasker):
     def _init(self):
         if not os.path.exists(self.cache_dir):
             os.makedirs(self.cache_dir)
+
+    def check_file_exists(self):
+        if os.path.exists(self.filepath):
+            raise FileExistsException()
+
+    def before_build(self):
         pass
 
     def after_run(self):
