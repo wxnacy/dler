@@ -62,7 +62,7 @@ class M3u8Tasker(BaseTasker):
             sub_tasks.append(self.build_dl_m3u8_sub_task())
             for ts_url in self.generate_urls():
                 _path = os.path.join(self.m3u8_download_dir,
-                    os.path.basename(ts_url))
+                    os.path.basename(urlparse(ts_url).path))
                 detail = DownloadTaskModel(url = ts_url, path = _path).dict()
                 st = SubTaskModel(detail = detail, task_type = 'download')
                 sub_tasks.append(st)
