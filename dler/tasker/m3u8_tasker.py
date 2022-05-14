@@ -22,6 +22,7 @@ class M3u8Tasker(BaseTasker):
     m3u8_download_dir: str = ""
     m3u8path: str = ""
     m3: M3U8
+    m3_url: str
 
     class Config(BaseConfig):
         task_type: str = 'm3u8'
@@ -34,6 +35,18 @@ class M3u8Tasker(BaseTasker):
             self.urlparse.path)
         _path = os.path.join(self.m3u8_download_dir, filename)
         self.m3u8path = _path
+
+    def before_build(self):
+        super().before_build()
+
+        self.m3_url = self.url
+        self.m3 = m3u8.load(self.m3_url)
+
+        if self.m3.playlists:
+            play_url = self.format_url(self.m3.playlists[0].uri)
+            self.m3_url = play_url
+            self.m3 = m3u8.load(self.m3_url)
+
 
     def build_task(self) -> dict:
         detail = {}
@@ -58,7 +71,7 @@ class M3u8Tasker(BaseTasker):
         return []
 
     def build_dl_m3u8_sub_task(self) -> SubTaskModel:
-        detail = DownloadTaskModel(url = self.url,
+        detail = DownloadTaskModel(url = self.m3_url,
             path = self.m3u8path).dict()
         return SubTaskModel(detail = detail, task_type = 'download_m3u8')
 
@@ -71,19 +84,11 @@ class M3u8Tasker(BaseTasker):
         return dl_dir
 
     def generate_urls(self):
-        m3 = m3u8.load(self.url)
-        self.m3 = m3
         name: str
-        for i, name in enumerate(m3.files):
+        for i, name in enumerate(self.m3.files):
             if not name:
                 continue
-            ts_url = name
-            if name.startswith('/'):
-                ts_url = f"{self.urlparse.scheme}://{self.urlparse.hostname}{name}"
-                #  print(ts_url)
-                yield ts_url
-            if not ts_url.startswith('http'):
-                ts_url = os.path.join(m3.base_uri, ts_url)
+            ts_url = self.format_url(name)
             yield ts_url
 
     def after_run(self):
@@ -96,6 +101,15 @@ class M3u8Tasker(BaseTasker):
         print("开始转码")
         cmd = f'ffmpeg -allowed_extensions ALL -i {self.m3u8path} -bsf:a aac_adtstoasc -vcodec copy -c copy -crf 50 {self.filepath}'
         run_shell(cmd)
+
+    def format_url(self, url: str):
+        _parse = urlparse(self.m3_url)
+        if url.startswith('/'):
+            url = f"{_parse.scheme}://{_parse.hostname}{url}"
+        if not url.startswith('http'):
+            url = os.path.join(self.m3.base_uri, url)
+        return url
+
 
 M3u8Tasker.trigger_sub_task('download')(tasktools.download)
 
