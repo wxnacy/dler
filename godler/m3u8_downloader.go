@@ -4,9 +4,7 @@ package godler
 import (
 	"bufio"
 	"fmt"
-	"net/url"
 	"os"
-	"strings"
 
 	"github.com/grafov/m3u8"
 )
@@ -15,10 +13,6 @@ type M3U8 struct {
 	URI            string
 	SegmentURIList []string
 }
-
-// func (m *M3U8) Format() {
-
-// }
 
 func ParseM3U8(uri string) *M3U8 {
 	f, err := os.Open(uri)
@@ -57,20 +51,5 @@ func ParseM3U8(uri string) *M3U8 {
 		fmt.Printf("%+v\n", masterpl)
 		fmt.Println("master")
 	}
-	// fmt.Println(filepath.Base("https://hot-box-gen.mushroomtrack.com/hls/HaJjNnw642RqIF3i4gNjMQ/1654442836/23000/23371/23371.m3u8"))
-	// fmt.Println(filepath.Dir("https://hot-box-gen.mushroomtrack.com/hls/HaJjNnw642RqIF3i4gNjMQ/1654442836/23000/23371/23371.m3u8"))
-	URL, _ := url.Parse("https://hot-box-gen.mushroomtrack.com/hls/HaJjNnw642RqIF3i4gNjMQ/1654442836/23000/23371/23371.m3u8")
-	fmt.Println(URL.Host, URL.Scheme)
 	return &m3
-}
-
-// 格式化地址
-func FormatURI(uri string, homepage string) string {
-
-	if strings.HasPrefix(uri, "http") {
-		return uri
-	} else if strings.HasPrefix(uri, "/") {
-		return homepage + uri
-	}
-
 }
