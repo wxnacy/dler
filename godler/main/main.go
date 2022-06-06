@@ -197,6 +197,27 @@ func DownloadById(id string) {
 	DownloadDTOList(dtos)
 }
 
+func NewDownloadById(id string) {
+	filepaths := ListDir("/Users/wxnacy/.lfsdb/data/download/sub_task-" + id)
+	dtos := make([]*godler.ResourceSegment, 0)
+	for _, path := range filepaths {
+		result, err := GetMapFromFile(path)
+		if err != nil {
+			continue
+		}
+		dto := godler.ResourceSegment{
+			URI:  result["download_url"].(string),
+			Path: result["download_path"].(string),
+		}
+		dtos = append(dtos, &dto)
+	}
+
+	// 更新进度
+
+	// 下载数据
+	godler.DownloadSegments(dtos, godler.NewDefaultConfig())
+}
+
 func main() {
 
 	begin := time.Now()
@@ -206,7 +227,7 @@ func main() {
 	switch action {
 	case "video":
 		id := os.Args[2]
-		DownloadById(id)
+		NewDownloadById(id)
 	case "test":
 		count := 10000
 
