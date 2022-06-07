@@ -68,14 +68,16 @@ func DownloadSegment(
 }
 
 type DownloadConfig struct {
-	ProcessNum   int
-	RetryMaxTime int
+	ProcessNum     int
+	RetryMaxTime   int
+	UseProgressBar bool
 }
 
 func NewDefaultConfig() *DownloadConfig {
 	return &DownloadConfig{
-		ProcessNum:   20,
-		RetryMaxTime: 99999999,
+		ProcessNum:     20,
+		RetryMaxTime:   99999999,
+		UseProgressBar: true,
 	}
 }
 
@@ -99,7 +101,10 @@ func DownloadSegments(dtos []*ResourceSegment, config *DownloadConfig) {
 	}()
 
 	RetryTime := 0
-	bar := pb.Full.Start(len(dtos))
+	var bar *pb.ProgressBar
+	if config.UseProgressBar {
+		bar = pb.Full.Start(len(dtos))
+	}
 	// 获取结果
 	for res := range responseChan {
 		// 判断是否需要重试
@@ -108,9 +113,16 @@ func DownloadSegments(dtos []*ResourceSegment, config *DownloadConfig) {
 			RetryTime++
 			AsyncDownloadSegment(res, &wg, processChan, responseChan)
 		} else {
-			bar.Increment()
+			if config.UseProgressBar {
+
+				bar.Increment()
+			}
 		}
 	}
-	bar.Finish()
+	if config.UseProgressBar {
+
+		bar.Finish()
+	}
+
 	fmt.Println(fmt.Sprintf("retry %d", RetryTime))
 }
