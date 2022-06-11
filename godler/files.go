@@ -3,7 +3,9 @@ package godler
 
 import (
 	"io/fs"
+	"io/ioutil"
 	"os"
+	"path"
 )
 
 const (
@@ -26,4 +28,13 @@ func DirExists(dirpath string) bool {
 		return false
 	}
 	return info.IsDir()
+}
+
+func WriteFile(filePath string, b []byte) error {
+
+	dirpath := path.Dir(filePath)
+	if !DirExists(dirpath) {
+		os.MkdirAll(dirpath, PermDir)
+	}
+	return ioutil.WriteFile(filePath, b, PermFile)
 }

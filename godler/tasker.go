@@ -10,17 +10,19 @@ import (
 type TaskFunc func(*Task) error
 
 type ITasker interface {
-	Build()
+	BuildTasker()
 	BuildTasks()
 	AddTask(*Task)
 	asyncRunTask(TaskFunc, *Task)
 	Run(TaskFunc)
+	AfterRun()
+	BeforeRun()
 }
 
 type Task struct {
 	RetryTime int   `json:"retry_count"`
 	Err       error `json:"err"`
-	Extra     interface{}
+	Info      interface{}
 }
 
 type TaskerConfig struct {
@@ -31,8 +33,9 @@ type TaskerConfig struct {
 
 func NewDefaultTaskerConfig() *TaskerConfig {
 	return &TaskerConfig{
-		ProcessNum:     20,
-		RetryMaxTime:   99999999,
+		ProcessNum:   20,
+		RetryMaxTime: 99999999,
+		// RetryMaxTime:   2,
 		UseProgressBar: true,
 	}
 }
@@ -49,7 +52,7 @@ type Tasker struct {
 func (t *Tasker) BuildTasks() {
 }
 
-func (t *Tasker) Build() {
+func (t *Tasker) BuildTasker() {
 	t.processChan = make(chan bool, t.Config.ProcessNum)
 	t.resultChan = make(chan *Task)
 	t.Tasks = make([]*Task, 0)
@@ -105,3 +108,5 @@ func (t *Tasker) Run(runTaskFunc TaskFunc) {
 		bar.Finish()
 	}
 }
+func (t *Tasker) AfterRun()  {}
+func (t *Tasker) BeforeRun() {}

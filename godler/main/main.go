@@ -6,7 +6,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/cheggaaa/pb/v3"
 	"github.com/wxnacy/dler/godler"
 )
 
@@ -22,20 +21,8 @@ func main() {
 		id := os.Args[2]
 		godler.DownloadById(id)
 	case "test":
-		count := 10000
-
-		// start bar from 'full' template
-		bar := pb.Full.Start(count)
-
-		for i := 0; i < count; i++ {
-			bar.Increment()
-			time.Sleep(time.Millisecond)
-		}
-
-		// finish bar
-		bar.Finish()
+		fmt.Println("")
 	case "m3u8":
-		// godler.ParseM3U8("/Users/wxnacy/Downloads/23371.m3u8")
 		fmt.Println("")
 	case "start":
 		uri := args[1]
@@ -45,18 +32,9 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		t.Build()
-		t.BuildTasks()
-		t.Run(t.RunTask)
+		godler.RunDownloadTasker(t)
 	case "task":
-		uri := args[1]
-		t, err := godler.MatchDownloadTasker(uri, godler.NewDefaultTaskerConfig())
-		if err != nil {
-			panic(err)
-		}
-		t.Build()
-		t.BuildTasks()
-		t.Run(t.RunTask)
+		fmt.Println("task")
 	default:
 		fmt.Println("不支持的命令")
 	}

@@ -3,24 +3,34 @@ package godler
 
 import "errors"
 
-// 下载任务管理器
-type IDownloadTasker interface {
-	ITasker
-	IDownloader
-}
-
 // 匹配下载任务器
 func MatchDownloadTasker(
 	uri string, config *TaskerConfig,
 ) (IDownloadTasker, error) {
-	downloaders := []IDownloadTasker{
+
+	URI, err := ParseURI(uri)
+	if err != nil {
+		panic(err)
+	}
+
+	downloader := Downloader{
+		URI:         URI,
+		DownloadDir: GetDownloadDir(),
+	}
+
+	tasker := Tasker{Config: config}
+	dt := DownloadTasker{
+		Downloader: downloader,
+		Tasker:     tasker,
+	}
+
+	taskers := []IDownloadTasker{
 		// m3u8 下载
 		&M3U8Downloader{
-			Downloader: Downloader{URI: uri},
-			Tasker:     Tasker{Config: config},
+			DownloadTasker: dt,
 		},
 	}
-	for _, d := range downloaders {
+	for _, d := range taskers {
 		if d.Match() {
 			return d, nil
 		}

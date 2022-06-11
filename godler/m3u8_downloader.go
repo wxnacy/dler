@@ -2,17 +2,10 @@
 package godler
 
 import (
-	"bufio"
-	"fmt"
-	"io"
-	"net/url"
-	"os"
+	"io/ioutil"
 	"path"
-	"path/filepath"
 	"regexp"
-	"strings"
 
-	"github.com/asmcos/requests"
 	"github.com/grafov/m3u8"
 )
 
@@ -21,122 +14,99 @@ type Resource struct {
 	Segments *[]Segment
 }
 
-type M3U8 struct {
-	URI         string
-	ID          string
-	homepage    string
-	dirname     string
-	downloadDir string
-}
-
-func (m *M3U8) Build(uri string) {
-	m.URI = uri
-	m.ID = strings.Replace(path.Base(uri), path.Ext(uri), "", 1)
-	URL, err := url.Parse(m.URI)
-	if err != nil {
-		panic(err)
-	}
-	m.homepage = fmt.Sprintf("%s://%s", URL.Scheme, URL.Host)
-	m.dirname = filepath.Dir(m.URI)
-	m.downloadDir = path.Join(GetDefaultDownloadDir(), m.ID)
-}
-
-func (m *M3U8) FormatURI(uri string) string {
-	if strings.HasPrefix(uri, "http") {
-		return uri
-	} else if strings.HasPrefix(uri, "/") {
-		return m.homepage + uri
-	}
-	return filepath.Join(m.dirname, uri)
-}
-
-func (m *M3U8) FormatPath(uri string) string {
-	return path.Join(m.downloadDir, path.Base(uri))
-}
-
-func ParseM3U8(uri string) *Resource {
-
-	var reader io.Reader
-	if strings.HasPrefix(uri, "http") {
-
-		resp, err := requests.Get(uri)
-		if err != nil {
-			panic(err)
-		}
-		fmt.Println(resp.R.StatusCode)
-		fmt.Println(resp.Text())
-		reader = strings.NewReader(resp.Text())
-	} else {
-
-		f, err := os.Open(uri)
-		if err != nil {
-			panic(err)
-		}
-		reader = bufio.NewReader(f)
-	}
-
-	p, listType, err := m3u8.DecodeFrom(reader, true)
-	if err != nil {
-		panic(err)
-	}
-	var res Resource
-	res.URI = uri
-	var m3 M3U8
-	m3.Build(uri)
-	switch listType {
-	case m3u8.MEDIA:
-		medias := p.(*m3u8.MediaPlaylist)
-		segments := make([]Segment, 0)
-
-		// 添加当前地址
-		segments = append(segments, Segment{
-			m3.FormatURI(uri), m3.FormatPath(uri),
-		})
-
-		key := medias.Key
-		if key != nil {
-			segments = append(segments, Segment{
-				m3.FormatURI(key.URI), m3.FormatPath(key.URI),
-			})
-		}
-		fmt.Println(segments)
-
-		for _, seg := range medias.Segments {
-			if seg == nil {
-				continue
-			}
-			segments = append(segments, Segment{
-				m3.FormatURI(seg.URI), m3.FormatPath(seg.URI),
-			})
-
-		}
-		res.Segments = &segments
-		fmt.Println(len(*res.Segments))
-	case m3u8.MASTER:
-		masterpl := p.(*m3u8.MasterPlaylist)
-		fmt.Printf("%+v\n", masterpl)
-		fmt.Println("master")
-	}
-	return &res
-}
-
 type M3U8Downloader struct {
-	Tasker
-	Downloader
+	DownloadTasker
+	M3U8PlayList m3u8.Playlist
+	M3U8ListType m3u8.ListType
+	Segments     []Segment
 }
 
 func (m M3U8Downloader) Match() bool {
-	flag, err := regexp.Match("http.*m3u8.*", []byte(m.URI))
+	flag, err := regexp.Match("http.*m3u8.*", []byte(m.URI.URI))
 	if err != nil {
 		return false
 	}
 	return flag
 }
 
-func (m *M3U8Downloader) BuildTasks() {
-	res := ParseM3U8(m.URI)
-	fmt.Println(len(*res.Segments))
-	for _, seg := range *res.Segments {
-		m.AddTask(&Task{Extra: seg})
+func (m *M3U8Downloader) addSegment(seg Segment) {
+	m.Segments = append(m.Segments, seg)
+}
+
+func (m *M3U8Downloader) BuildDownloader() {
+	m.Segments = make([]Segment, 0)
+	m.DownloadDir = path.Join(m.DownloadDir, m.Name)
+
+	// 解析 m3u8 文件
+	reader, err := GetReaderFromURI(m.URI.URI)
+	if err != nil {
+		panic(err)
 	}
+	m.M3U8PlayList, m.M3U8ListType, err = m3u8.DecodeFrom(reader, true)
+	if err != nil {
+		panic(err)
+	}
+
+	m.ParserM3U8()
+}
+
+func (m *M3U8Downloader) BuildTasks() {
+
+	for _, seg := range m.Segments {
+		// fmt.Println(seg)
+		info := DownloadInfo{Segment: seg}
+		m.AddTask(&Task{Info: info})
+	}
+}
+
+func (m *M3U8Downloader) ParserM3U8() {
+	switch m.M3U8ListType {
+	case m3u8.MEDIA:
+		medias := m.M3U8PlayList.(*m3u8.MediaPlaylist)
+
+		key := medias.Key
+		if key != nil {
+
+			m.addSegment(Segment{
+				m.FormatURI(key.URI), m.FormatPath(key.URI),
+			})
+
+			_URI, err := ParseURI(key.URI)
+			if err != nil {
+				panic(err)
+			}
+			if key.URI != _URI.FullName {
+				key.URI = _URI.FullName
+			}
+		}
+
+		for _, seg := range medias.Segments {
+			if seg == nil {
+				continue
+			}
+			// 添加下载片段
+			m.addSegment(Segment{
+				m.FormatURI(seg.URI), m.FormatPath(seg.URI),
+			})
+
+			_URI, err := ParseURI(seg.URI)
+			if err != nil {
+				panic(err)
+			}
+			if seg.URI != _URI.FullName {
+				seg.URI = _URI.FullName
+			}
+		}
+		m.SaveM3U8(medias)
+
+	}
+}
+
+func (m M3U8Downloader) SaveM3U8(mediaPlaylist *m3u8.MediaPlaylist) {
+	b, err := ioutil.ReadAll(mediaPlaylist.Encode())
+	if err != nil {
+		panic(err)
+	}
+
+	WriteFile(m.FormatPath(m.URI.FullName), b)
 }

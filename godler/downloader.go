@@ -3,10 +3,11 @@ package godler
 
 import (
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
-	"path/filepath"
+	"path"
+	"strings"
 )
 
 func Download(uri string, path string) error {
@@ -26,12 +27,7 @@ func Download(uri string, path string) error {
 	if err != nil {
 		return err
 	}
-	dirpath := filepath.Dir(path)
-	if !DirExists(dirpath) {
-		os.MkdirAll(dirpath, PermDir)
-	}
-	ioutil.WriteFile(path, b, PermFile)
-	return nil
+	return WriteFile(path, b)
 }
 
 type Segment struct {
@@ -39,26 +35,45 @@ type Segment struct {
 	Path string `json:"path"`
 }
 
+type DownloadInfo struct {
+	Segment
+	Type  string
+	Extra interface{}
+}
+
 // 下载接口
 type IDownloader interface {
 	Match() bool
-	RunTask(*Task) error
+	BuildDownloader()
+	Download(*DownloadInfo) error
 }
 
 // 下载器父类
 type Downloader struct {
-	URI string
+	*URI
+	DownloadDir string
 }
 
 func (d Downloader) Match() bool {
 	return false
 }
 
-// 运行下载任务
-func (d Downloader) RunTask(task *Task) error {
-	if task.Extra != nil {
-		seg := task.Extra.(Segment)
-		return Download(seg.Url, seg.Path)
+func (d *Downloader) BuildDownloader() {
+}
+
+func (d Downloader) Download(info *DownloadInfo) error {
+	return Download(info.Url, info.Path)
+}
+
+func (d Downloader) FormatURI(uri string) string {
+	if strings.HasPrefix(uri, "http") {
+		return uri
+	} else if strings.HasPrefix(uri, "/") {
+		return d.Homepage + uri
 	}
-	return errors.New("emtry task")
+	return fmt.Sprintf("%s/%s", d.Dirname, uri)
+}
+
+func (d Downloader) FormatPath(uri string) string {
+	return path.Join(d.DownloadDir, path.Base(uri))
 }
