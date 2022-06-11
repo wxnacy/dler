@@ -7,13 +7,14 @@ import (
 	"github.com/cheggaaa/pb/v3"
 )
 
-type TaskerInterface interface {
+type TaskFunc func(*Task) error
+
+type ITasker interface {
 	Build()
 	BuildTasks()
-	AddTask(task *Task)
-	runTask(*Task) error
-	asyncRunTask(func(*Task) error, *Task)
-	Run()
+	AddTask(*Task)
+	asyncRunTask(TaskFunc, *Task)
+	Run(TaskFunc)
 }
 
 type Task struct {
@@ -58,12 +59,7 @@ func (t *Tasker) AddTask(task *Task) {
 	t.Tasks = append(t.Tasks, task)
 }
 
-func (t *Tasker) runTask(task *Task) error {
-
-	return nil
-}
-
-func (t *Tasker) asyncRunTask(runTaskFunc func(*Task) error, task *Task) {
+func (t *Tasker) asyncRunTask(runTaskFunc TaskFunc, task *Task) {
 	t.WaitGroup.Add(1)
 	go func(task *Task) {
 		defer t.WaitGroup.Done()
@@ -75,7 +71,7 @@ func (t *Tasker) asyncRunTask(runTaskFunc func(*Task) error, task *Task) {
 	}(task)
 }
 
-func (t *Tasker) Run(runTaskFunc func(*Task) error) {
+func (t *Tasker) Run(runTaskFunc TaskFunc) {
 
 	for _, task := range t.Tasks {
 		t.asyncRunTask(runTaskFunc, task)

@@ -3,23 +3,18 @@ package godler
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"io"
 	"net/url"
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/asmcos/requests"
 	"github.com/grafov/m3u8"
 )
-
-type Segment struct {
-	Url  string `json:"url"`
-	Path string `json:"path"`
-}
 
 type Resource struct {
 	URI      string `json:"uri"`
@@ -60,7 +55,6 @@ func (m *M3U8) FormatPath(uri string) string {
 }
 
 func ParseM3U8(uri string) *Resource {
-	// http.NewRequest("GET", uri)
 
 	var reader io.Reader
 	if strings.HasPrefix(uri, "http") {
@@ -111,7 +105,6 @@ func ParseM3U8(uri string) *Resource {
 			if seg == nil {
 				continue
 			}
-			// fmt.Println(i, seg.URI)
 			segments = append(segments, Segment{
 				m3.FormatURI(seg.URI), m3.FormatPath(seg.URI),
 			})
@@ -129,20 +122,21 @@ func ParseM3U8(uri string) *Resource {
 
 type M3U8Downloader struct {
 	Tasker
+	Downloader
+}
+
+func (m M3U8Downloader) Match() bool {
+	flag, err := regexp.Match("http.*m3u8.*", []byte(m.URI))
+	if err != nil {
+		return false
+	}
+	return flag
 }
 
 func (m *M3U8Downloader) BuildTasks() {
-	res := ParseM3U8("https://v3.cdtlas.com/20211220/SxMZSDqv/1100kb/hls/index.m3u8")
+	res := ParseM3U8(m.URI)
 	fmt.Println(len(*res.Segments))
 	for _, seg := range *res.Segments {
 		m.AddTask(&Task{Extra: seg})
 	}
-}
-
-func (m *M3U8Downloader) RunTask(task *Task) error {
-	if task.Extra != nil {
-		seg := task.Extra.(Segment)
-		return Download(seg.Url, seg.Path)
-	}
-	return errors.New("emtry task")
 }

@@ -13,8 +13,9 @@ import (
 func main() {
 
 	begin := time.Now()
+	args := os.Args[1:]
 
-	action := os.Args[1]
+	action := args[0]
 
 	switch action {
 	case "video":
@@ -37,15 +38,25 @@ func main() {
 		// godler.ParseM3U8("/Users/wxnacy/Downloads/23371.m3u8")
 		fmt.Println("")
 	case "start":
-		// godler.ParseM3U8("/Users/wxnacy/Downloads/23371.m3u8")
-		fmt.Println("")
-	case "task":
-		tasker := godler.M3U8Downloader{
-			Tasker: godler.Tasker{Config: godler.NewDefaultTaskerConfig()},
+		uri := args[1]
+		t, err := godler.MatchDownloadTasker(
+			uri, godler.NewDefaultTaskerConfig(),
+		)
+		if err != nil {
+			panic(err)
 		}
-		tasker.Build()
-		tasker.BuildTasks()
-		tasker.Run(tasker.RunTask)
+		t.Build()
+		t.BuildTasks()
+		t.Run(t.RunTask)
+	case "task":
+		uri := args[1]
+		t, err := godler.MatchDownloadTasker(uri, godler.NewDefaultTaskerConfig())
+		if err != nil {
+			panic(err)
+		}
+		t.Build()
+		t.BuildTasks()
+		t.Run(t.RunTask)
 	default:
 		fmt.Println("不支持的命令")
 	}
