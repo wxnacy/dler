@@ -13,7 +13,7 @@ type ITasker interface {
 	BuildTasker()
 	BuildTasks()
 	AddTask(*Task)
-	asyncRunTask(TaskFunc, *Task)
+	// asyncRunTask(TaskFunc, *Task)
 	Run(TaskFunc)
 	AfterRun()
 	BeforeRun()
@@ -31,12 +31,21 @@ type TaskerConfig struct {
 	UseProgressBar bool
 }
 
-func NewDefaultTaskerConfig() *TaskerConfig {
+func NewTaskerConfig() *TaskerConfig {
 	return &TaskerConfig{
 		ProcessNum:   20,
 		RetryMaxTime: 99999999,
 		// RetryMaxTime:   2,
 		UseProgressBar: true,
+	}
+}
+
+func NewTasker(config *TaskerConfig) *Tasker {
+	return &Tasker{
+		Config:      config,
+		processChan: make(chan bool, config.ProcessNum),
+		resultChan:  make(chan *Task),
+		Tasks:       make([]*Task, 0),
 	}
 }
 
@@ -49,14 +58,13 @@ type Tasker struct {
 	WaitGroup   sync.WaitGroup
 }
 
-func (t *Tasker) BuildTasks() {
-}
+func (t *Tasker) BuildTasks() {}
 
-func (t *Tasker) BuildTasker() {
-	t.processChan = make(chan bool, t.Config.ProcessNum)
-	t.resultChan = make(chan *Task)
-	t.Tasks = make([]*Task, 0)
-}
+func (t *Tasker) BuildTasker() {}
+
+func (t *Tasker) AfterRun() {}
+
+func (t *Tasker) BeforeRun() {}
 
 func (t *Tasker) AddTask(task *Task) {
 	t.Tasks = append(t.Tasks, task)
@@ -108,5 +116,3 @@ func (t *Tasker) Run(runTaskFunc TaskFunc) {
 		bar.Finish()
 	}
 }
-func (t *Tasker) AfterRun()  {}
-func (t *Tasker) BeforeRun() {}

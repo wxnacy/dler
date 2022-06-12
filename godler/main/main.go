@@ -27,7 +27,7 @@ func main() {
 	case "start":
 		uri := args[1]
 		t, err := godler.MatchDownloadTasker(
-			uri, godler.NewDefaultTaskerConfig(),
+			uri, godler.NewTaskerConfig(),
 		)
 		if err != nil {
 			panic(err)

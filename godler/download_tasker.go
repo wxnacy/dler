@@ -5,6 +5,18 @@ import (
 	"errors"
 )
 
+func NewDownloadTaskConfig(downloadDir string) *DownloadTaskConfig {
+	return &DownloadTaskConfig{
+		DownloadConfig: NewDownloadConfig(downloadDir),
+		TaskerConfig:   NewTaskerConfig(),
+	}
+}
+
+type DownloadTaskConfig struct {
+	*TaskerConfig
+	*DownloadConfig
+}
+
 // 下载任务管理器
 type IDownloadTasker interface {
 	ITasker
@@ -12,9 +24,21 @@ type IDownloadTasker interface {
 	RunTask(*Task) error
 }
 
+func NewDownloadTasker(
+	uri string, config *DownloadTaskConfig,
+) (*DownloadTasker, error) {
+	downloader, err := NewDownloader(uri, config.DownloadConfig)
+	if err != nil {
+		return nil, err
+	}
+	return &DownloadTasker{
+		Downloader: downloader, Tasker: NewTasker(config.TaskerConfig),
+	}, nil
+}
+
 type DownloadTasker struct {
-	Tasker
-	Downloader
+	*Tasker
+	*Downloader
 }
 
 func (d DownloadTasker) parseTask(task *Task) DownloadInfo {

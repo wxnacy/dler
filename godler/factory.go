@@ -8,17 +8,12 @@ func MatchDownloadTasker(
 	uri string, config *TaskerConfig,
 ) (IDownloadTasker, error) {
 
-	URI, err := ParseURI(uri)
+	downloader, err := NewDownloader(uri, NewDownloadConfig(""))
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
-	downloader := Downloader{
-		URI:         URI,
-		DownloadDir: GetDownloadDir(),
-	}
-
-	tasker := Tasker{Config: config}
+	tasker := NewTasker(config)
 	dt := DownloadTasker{
 		Downloader: downloader,
 		Tasker:     tasker,

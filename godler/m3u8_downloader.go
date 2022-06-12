@@ -9,11 +9,6 @@ import (
 	"github.com/grafov/m3u8"
 )
 
-type Resource struct {
-	URI      string `json:"uri"`
-	Segments *[]Segment
-}
-
 type M3U8Downloader struct {
 	DownloadTasker
 	M3U8PlayList m3u8.Playlist
@@ -35,7 +30,8 @@ func (m *M3U8Downloader) addSegment(seg Segment) {
 
 func (m *M3U8Downloader) BuildDownloader() {
 	m.Segments = make([]Segment, 0)
-	m.DownloadDir = path.Join(m.DownloadDir, m.Name)
+	m.Downloader.Config.DownloadDir = path.Join(
+		m.Downloader.Config.DownloadDir, m.Name)
 
 	// 解析 m3u8 文件
 	reader, err := GetReaderFromURI(m.URI.URI)

@@ -41,6 +41,18 @@ type DownloadInfo struct {
 	Extra interface{}
 }
 
+func NewDownloadConfig(downloadDir string) *DownloadConfig {
+	dlDir := GetDownloadDir()
+	if downloadDir != "" {
+		dlDir = downloadDir
+	}
+	return &DownloadConfig{DownloadDir: dlDir}
+}
+
+type DownloadConfig struct {
+	DownloadDir string
+}
+
 // 下载接口
 type IDownloader interface {
 	Match() bool
@@ -48,10 +60,20 @@ type IDownloader interface {
 	Download(*DownloadInfo) error
 }
 
+// 初始化 Downloader
+func NewDownloader(uri string, config *DownloadConfig) (*Downloader, error) {
+	URI, err := ParseURI(uri)
+	if err != nil {
+		return nil, err
+	}
+	return &Downloader{URI: URI, Config: config}, nil
+}
+
 // 下载器父类
 type Downloader struct {
 	*URI
-	DownloadDir string
+	// DownloadDir string
+	Config *DownloadConfig
 }
 
 func (d Downloader) Match() bool {
@@ -75,5 +97,5 @@ func (d Downloader) FormatURI(uri string) string {
 }
 
 func (d Downloader) FormatPath(uri string) string {
-	return path.Join(d.DownloadDir, path.Base(uri))
+	return path.Join(d.Config.DownloadDir, path.Base(uri))
 }
