@@ -8,17 +8,31 @@ import (
 	"net/http"
 	"path"
 	"strings"
+
+	"github.com/mitchellh/go-homedir"
 )
 
-func Download(uri string, path string) error {
+func HttpGet(uri string, header map[string]string) (*http.Response, error) {
+	req, err := http.NewRequest("GET", uri, nil)
+	if err != nil {
+		return nil, err
+	}
+	for k, v := range header {
+		req.Header.Set(k, v)
+	}
+	client := &http.Client{}
+	return client.Do(req)
+}
+
+func Download(uri string, path string, header map[string]string) error {
 	if FileExists(path) {
 		return nil
 	}
-	resp, err := http.Get(uri)
+	resp, err := HttpGet(uri, header)
 	if err != nil {
 		return err
 	}
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode >= http.StatusMultipleChoices {
 		b, _ := ioutil.ReadAll(resp.Body)
 		return errors.New(string(b))
 	}
@@ -27,12 +41,14 @@ func Download(uri string, path string) error {
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
 	return WriteFile(path, b)
 }
 
 type Segment struct {
-	Url  string `json:"url"`
-	Path string `json:"path"`
+	Url    string `json:"url"`
+	Path   string `json:"path"`
+	Header map[string]string
 }
 
 type DownloadInfo struct {
@@ -44,7 +60,12 @@ type DownloadInfo struct {
 func NewDownloadConfig(downloadDir string) *DownloadConfig {
 	dlDir := GetDownloadDir()
 	if downloadDir != "" {
+		downloadDir, err := homedir.Expand(downloadDir)
+		if err != nil {
+			panic(err)
+		}
 		dlDir = downloadDir
+
 	}
 	return &DownloadConfig{DownloadDir: dlDir}
 }
@@ -84,7 +105,12 @@ func (d *Downloader) BuildDownloader() {
 }
 
 func (d Downloader) Download(info *DownloadInfo) error {
-	return Download(info.Url, info.Path)
+	// var args []interface{}
+	// args := make([]interface{}, 0)
+	// if info.Header != nil {
+	// args = append(args, requests.Header(info.Header))
+	// }
+	return Download(info.Url, info.Path, info.Header)
 }
 
 func (d Downloader) FormatURI(uri string) string {

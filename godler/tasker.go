@@ -13,7 +13,6 @@ type ITasker interface {
 	BuildTasker()
 	BuildTasks()
 	AddTask(*Task)
-	// asyncRunTask(TaskFunc, *Task)
 	Run(TaskFunc)
 	AfterRun()
 	BeforeRun()
@@ -33,9 +32,9 @@ type TaskerConfig struct {
 
 func NewTaskerConfig() *TaskerConfig {
 	return &TaskerConfig{
-		ProcessNum:   20,
-		RetryMaxTime: 99999999,
-		// RetryMaxTime:   2,
+		ProcessNum: 20,
+		// RetryMaxTime: 99999999,
+		RetryMaxTime:   2,
 		UseProgressBar: true,
 	}
 }
@@ -76,6 +75,7 @@ func (t *Tasker) asyncRunTask(runTaskFunc TaskFunc, task *Task) {
 		defer t.WaitGroup.Done()
 		t.processChan <- true
 		err := runTaskFunc(task)
+		// fmt.Println(err)
 		task.Err = err
 		<-t.processChan
 		t.resultChan <- task
@@ -103,6 +103,7 @@ func (t *Tasker) Run(runTaskFunc TaskFunc) {
 	for res := range t.resultChan {
 		// 判断是否需要重试
 		if res.Err != nil && res.RetryTime < t.Config.RetryMaxTime {
+			// fmt.Println(res.Err)
 			res.RetryTime++
 			RetryTime++
 			t.asyncRunTask(runTaskFunc, res)

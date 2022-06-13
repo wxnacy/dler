@@ -1,5 +1,7 @@
 github.com/VividCortex/ewma v1.1.1 h1:MnEK4VOv6n0RSY4vtRe3h11qjxL3+t0B8yOL8iMXdcM=
 github.com/VividCortex/ewma v1.1.1/go.mod h1:2Tkkvm3sRDVXaiyucHiACn4cqf7DpdyLvmxzcbUokwA=
+github.com/akamensky/argparse v1.3.1 h1:kP6+OyvR0fuBH6UhbE6yh/nskrDEIQgEA1SUXDPjx4g=
+github.com/akamensky/argparse v1.3.1/go.mod h1:S5kwC7IuDcEr5VeXtGPRVZ5o/FdhcMlQz4IZQuw64xA=
 github.com/asmcos/requests v0.0.0-20210319030608-c839e8ae4946 h1:1B8lZnGJOS3E7LumjuY6lb2NzXy8vBY6N2ag/IK6JdI=
 github.com/asmcos/requests v0.0.0-20210319030608-c839e8ae4946/go.mod h1:2W5PB6UTVRBypeouEebhwOJrDZOfJvPwMP1mtD8ZXM4=
 github.com/cheggaaa/pb/v3 v3.0.8 h1:bC8oemdChbke2FHIIGy9mn4DPJ2caZYQnfbRqwmdCoA=

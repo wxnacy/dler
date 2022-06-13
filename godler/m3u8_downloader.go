@@ -10,7 +10,7 @@ import (
 )
 
 type M3U8Downloader struct {
-	DownloadTasker
+	*DownloadTasker
 	M3U8PlayList m3u8.Playlist
 	M3U8ListType m3u8.ListType
 	Segments     []Segment
@@ -64,7 +64,7 @@ func (m *M3U8Downloader) ParserM3U8() {
 		if key != nil {
 
 			m.addSegment(Segment{
-				m.FormatURI(key.URI), m.FormatPath(key.URI),
+				Url: m.FormatURI(key.URI), Path: m.FormatPath(key.URI),
 			})
 
 			_URI, err := ParseURI(key.URI)
@@ -82,7 +82,7 @@ func (m *M3U8Downloader) ParserM3U8() {
 			}
 			// 添加下载片段
 			m.addSegment(Segment{
-				m.FormatURI(seg.URI), m.FormatPath(seg.URI),
+				Url: m.FormatURI(seg.URI), Path: m.FormatPath(seg.URI),
 			})
 
 			_URI, err := ParseURI(seg.URI)

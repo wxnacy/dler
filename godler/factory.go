@@ -5,25 +5,19 @@ import "errors"
 
 // 匹配下载任务器
 func MatchDownloadTasker(
-	uri string, config *TaskerConfig,
+	uri string, config *DownloadTaskConfig,
 ) (IDownloadTasker, error) {
 
-	downloader, err := NewDownloader(uri, NewDownloadConfig(""))
+	dt, err := NewDownloadTasker(uri, config)
 	if err != nil {
 		return nil, err
 	}
 
-	tasker := NewTasker(config)
-	dt := DownloadTasker{
-		Downloader: downloader,
-		Tasker:     tasker,
-	}
-
 	taskers := []IDownloadTasker{
 		// m3u8 下载
-		&M3U8Downloader{
-			DownloadTasker: dt,
-		},
+		&M3U8Downloader{DownloadTasker: dt},
+		// 文件下载
+		&FileDownloader{DownloadTasker: dt},
 	}
 	for _, d := range taskers {
 		if d.Match() {
