@@ -68,9 +68,6 @@ func NewFileDownloader(dt *DownloadTasker) *FileDownloader {
 	segments := make([]Segment, 0)
 	rangeSegments := make([]RangeSegment, 0)
 	cacheDir := path.Join(dt.GetCacheDir(), dt.GetName())
-	if !DirExists(cacheDir) {
-		os.MkdirAll(cacheDir, PermDir)
-	}
 	return &FileDownloader{
 		DownloadTasker: dt,
 		Segments:       &segments,
@@ -101,6 +98,9 @@ func (f FileDownloader) Match() bool {
 }
 
 func (f *FileDownloader) BuildDownloader() {
+	if !DirExists(f.CacheDir) {
+		os.MkdirAll(f.CacheDir, PermDir)
+	}
 	resp, err := http.Head(f.URI.URI)
 	if err != nil {
 		panic(err)
@@ -173,5 +173,5 @@ func (f *FileDownloader) AfterRun() {
 	if f.WithPart {
 		f.MergeFile()
 	}
-	fmt.Println("文件下载完成:", f.GetPath())
+	f.DownloadTasker.AfterRun()
 }

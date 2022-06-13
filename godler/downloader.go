@@ -126,11 +126,6 @@ func (d *Downloader) BuildDownloader() {
 }
 
 func (d Downloader) Download(info *DownloadInfo) error {
-	// var args []interface{}
-	// args := make([]interface{}, 0)
-	// if info.Header != nil {
-	// args = append(args, requests.Header(info.Header))
-	// }
 	return Download(info.Url, info.Path, info.Header)
 }
 
@@ -144,5 +139,5 @@ func (d Downloader) FormatURI(uri string) string {
 }
 
 func (d Downloader) FormatPath(uri string) string {
-	return path.Join(d.Config.DownloadDir, path.Base(uri))
+	return path.Join(d.GetDir(), path.Base(uri))
 }

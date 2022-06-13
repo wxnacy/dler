@@ -5,15 +5,30 @@ import (
 	"io/ioutil"
 	"path"
 	"regexp"
+	"strings"
 
 	"github.com/grafov/m3u8"
 )
+
+func NewM3U8Downloader(dt *DownloadTasker) *M3U8Downloader {
+	m := &M3U8Downloader{
+		DownloadTasker: dt,
+	}
+	segments := make([]Segment, 0)
+	m.Segments = &segments
+	m3u8Name := m.GetName()
+	m3u8Name = strings.Replace(
+		m3u8Name, path.Ext(m3u8Name), "", 1)
+	m.Downloader.Config.DownloadDir = path.Join(
+		m.Downloader.Config.DownloadDir, m3u8Name)
+	return m
+}
 
 type M3U8Downloader struct {
 	*DownloadTasker
 	M3U8PlayList m3u8.Playlist
 	M3U8ListType m3u8.ListType
-	Segments     []Segment
+	Segments     *[]Segment
 }
 
 func (m M3U8Downloader) Match() bool {
@@ -25,13 +40,10 @@ func (m M3U8Downloader) Match() bool {
 }
 
 func (m *M3U8Downloader) addSegment(seg Segment) {
-	m.Segments = append(m.Segments, seg)
+	*m.Segments = append(*m.Segments, seg)
 }
 
 func (m *M3U8Downloader) BuildDownloader() {
-	m.Segments = make([]Segment, 0)
-	m.Downloader.Config.DownloadDir = path.Join(
-		m.Downloader.Config.DownloadDir, m.Name)
 
 	// 解析 m3u8 文件
 	reader, err := GetReaderFromURI(m.URI.URI)
@@ -48,7 +60,7 @@ func (m *M3U8Downloader) BuildDownloader() {
 
 func (m *M3U8Downloader) BuildTasks() {
 
-	for _, seg := range m.Segments {
+	for _, seg := range *m.Segments {
 		// fmt.Println(seg)
 		info := DownloadInfo{Segment: seg}
 		m.AddTask(&Task{Info: info})
@@ -104,5 +116,5 @@ func (m M3U8Downloader) SaveM3U8(mediaPlaylist *m3u8.MediaPlaylist) {
 		panic(err)
 	}
 
-	WriteFile(m.FormatPath(m.URI.FullName), b)
+	WriteFile(m.FormatPath(m.GetName()), b)
 }

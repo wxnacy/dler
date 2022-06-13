@@ -3,6 +3,7 @@ package godler
 
 import (
 	"errors"
+	"fmt"
 )
 
 func NewDownloadTaskConfig(
@@ -49,6 +50,10 @@ func (d DownloadTasker) parseTask(task *Task) DownloadInfo {
 	}
 	info := task.Info.(DownloadInfo)
 	return info
+}
+
+func (dt *DownloadTasker) AfterRun() {
+	fmt.Println("文件下载完成:", dt.GetPath())
 }
 
 // 运行下载任务
