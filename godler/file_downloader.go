@@ -4,10 +4,16 @@ package godler
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
+	"os"
 	"path"
 	"regexp"
 	"strconv"
+)
+
+const (
+	SEGMENT_SIZE int = 16 * 1024 * 1024
 )
 
 type RangeSegment struct {
@@ -58,10 +64,33 @@ func (h *Header) ConverHttpHeader(header http.Header) error {
 	return json.Unmarshal(b, h)
 }
 
+func NewFileDownloader(dt *DownloadTasker) *FileDownloader {
+	segments := make([]Segment, 0)
+	rangeSegments := make([]RangeSegment, 0)
+	cacheDir := path.Join(dt.GetCacheDir(), dt.GetName())
+	if !DirExists(cacheDir) {
+		os.MkdirAll(cacheDir, PermDir)
+	}
+	return &FileDownloader{
+		DownloadTasker: dt,
+		Segments:       &segments,
+		RangeSegments:  &rangeSegments,
+		CacheDir:       cacheDir,
+	}
+}
+
 type FileDownloader struct {
 	*DownloadTasker
-	Segments *[]Segment
+	Segments      *[]Segment
+	RangeSegments *[]RangeSegment
+	WithPart      bool
+	CacheDir      string
 }
+
+// 获取缓存目录
+// func (f FileDownloader) GetCacheDir() string {
+// return path.Join(f.GetDir(), f.GetName())
+// }
 
 func (f FileDownloader) Match() bool {
 	flag, err := regexp.Match("http.*", []byte(f.URI.URI))
@@ -72,12 +101,6 @@ func (f FileDownloader) Match() bool {
 }
 
 func (f *FileDownloader) BuildDownloader() {
-	// http.Head(f.URI.URI)
-
-}
-
-func (f *FileDownloader) BuildTasks() {
-
 	resp, err := http.Head(f.URI.URI)
 	if err != nil {
 		panic(err)
@@ -87,24 +110,68 @@ func (f *FileDownloader) BuildTasks() {
 	if err != nil {
 		panic(err)
 	}
-	rangeSegments := header.GetRangeSegments(16 * 1024 * 1024)
-	for _, rangeSeg := range rangeSegments {
+	if resp.ContentLength > int64(SEGMENT_SIZE) {
+		f.WithPart = true
+	}
+	defer resp.Body.Close()
+	rangeSegments := header.GetRangeSegments(SEGMENT_SIZE)
+	*f.RangeSegments = rangeSegments
+}
+
+func (f *FileDownloader) buildRangeTasks() {
+
+	for _, rangeSeg := range *f.RangeSegments {
 		header := make(map[string]string)
 		headerRange := fmt.Sprintf("bytes=%d-%d", rangeSeg.Start, rangeSeg.End)
 		header["Range"] = headerRange
 
-		p := path.Join(
-			f.Downloader.Config.DownloadDir,
-			headerRange,
-		)
+		p := path.Join(f.CacheDir, headerRange)
 		seg := Segment{
 			Url:    f.URI.URI,
 			Path:   p,
 			Header: header,
 		}
-		fmt.Println(seg)
+		*f.Segments = append(*f.Segments, seg)
 		f.AddTask(&Task{Info: DownloadInfo{
 			Segment: seg,
 		}})
 	}
+}
+
+func (f *FileDownloader) BuildTasks() {
+
+	if f.WithPart {
+		f.buildRangeTasks()
+	} else {
+		seg := Segment{
+			Url:  f.URI.URI,
+			Path: f.GetPath(),
+		}
+		*f.Segments = append(*f.Segments, seg)
+		f.AddTask(&Task{Info: DownloadInfo{Segment: seg}})
+	}
+}
+
+func (f FileDownloader) MergeFile() {
+	fmt.Println("开始合并文件")
+	filePath := f.GetPath()
+	os.Remove(filePath)
+	for _, seg := range *f.Segments {
+		b, err := ioutil.ReadFile(seg.Path)
+		if err != nil {
+			panic(err)
+		}
+		err = AppendFile(filePath, b)
+		if err != nil {
+			panic(err)
+		}
+	}
+	fmt.Println("合并文件成功")
+}
+
+func (f *FileDownloader) AfterRun() {
+	if f.WithPart {
+		f.MergeFile()
+	}
+	fmt.Println("文件下载完成:", f.GetPath())
 }

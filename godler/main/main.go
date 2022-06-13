@@ -14,6 +14,7 @@ import (
 var (
 	uriArg         string
 	downloadDirArg *string
+	nameArg        *string
 
 	testCommand *argparse.Command
 )
@@ -28,6 +29,8 @@ func InitArgparse() {
 
 	// Create string flag
 	downloadDirArg = parser.String("", "download-dir", &argparse.Options{Required: false, Help: "String to print"})
+	// 下载名称
+	nameArg = parser.String("n", "name", &argparse.Options{Required: false, Help: "Download Name"})
 
 	// 测试命令
 	testCommand = parser.NewCommand("test", "测试程序")
@@ -54,7 +57,7 @@ func ParserURIArg() {
 // 运行下载命令
 func RunDownloadCommand() {
 	t, err := godler.MatchDownloadTasker(
-		uriArg, godler.NewDownloadTaskConfig(*downloadDirArg),
+		uriArg, godler.NewDownloadTaskConfig(*downloadDirArg, *nameArg),
 	)
 	if err != nil {
 		panic(err)
@@ -68,22 +71,12 @@ func main() {
 	begin := time.Now()
 	if testCommand.Happened() {
 		path := fmt.Sprintf("/Users/wxnacy/Downloads/%d", time.Now().Unix())
-		// resp, err := godler.HttpGet(
-		// "https://v3-default.ixigua.com/70050e6d79f5ccf082a85126c8f6ed55/62a749b2/video/tos/cn/tos-cn-v-6f4170/9a2aa8ac131d4ab2ba49724c8ce22bbc/?zxzjtv&filename=1.mp4",
-		// map[string]string{"Range": "bytes=0-1024"},
-		// )
 		err := godler.Download(
 			"https://v3-default.ixigua.com/70050e6d79f5ccf082a85126c8f6ed55/62a749b2/video/tos/cn/tos-cn-v-6f4170/9a2aa8ac131d4ab2ba49724c8ce22bbc/?zxzjtv&filename=1.mp4",
 			path,
 			map[string]string{"Range": "bytes=0-1024"},
 		)
 		fmt.Println(err)
-		// fmt.Println(resp.R.ContentLength, err)
-		// fmt.Println(resp.R.StatusCode)
-		// b, err := ioutil.ReadAll(resp.Body)
-		// fmt.Println("err", err)
-		// err = godler.WriteFile(path, b)
-		// defer resp.R.Body.Close()
 	} else {
 		RunDownloadCommand()
 	}

@@ -5,9 +5,11 @@ import (
 	"errors"
 )
 
-func NewDownloadTaskConfig(downloadDir string) *DownloadTaskConfig {
+func NewDownloadTaskConfig(
+	downloadDir string, name string,
+) *DownloadTaskConfig {
 	return &DownloadTaskConfig{
-		DownloadConfig: NewDownloadConfig(downloadDir),
+		DownloadConfig: NewDownloadConfig(downloadDir, name),
 		TaskerConfig:   NewTaskerConfig(),
 	}
 }

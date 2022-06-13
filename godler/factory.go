@@ -17,7 +17,7 @@ func MatchDownloadTasker(
 		// m3u8 下载
 		&M3U8Downloader{DownloadTasker: dt},
 		// 文件下载
-		&FileDownloader{DownloadTasker: dt},
+		NewFileDownloader(dt),
 	}
 	for _, d := range taskers {
 		if d.Match() {

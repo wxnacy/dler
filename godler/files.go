@@ -38,3 +38,17 @@ func WriteFile(filePath string, b []byte) error {
 	}
 	return ioutil.WriteFile(filePath, b, PermFile)
 }
+
+func AppendFile(filePath string, b []byte) error {
+
+	f, err := os.OpenFile(filePath,
+		os.O_APPEND|os.O_CREATE|os.O_WRONLY, PermFile)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	if _, err := f.Write(b); err != nil {
+		return err
+	}
+	return nil
+}

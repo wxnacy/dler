@@ -57,7 +57,7 @@ type DownloadInfo struct {
 	Extra interface{}
 }
 
-func NewDownloadConfig(downloadDir string) *DownloadConfig {
+func NewDownloadConfig(downloadDir string, name string) *DownloadConfig {
 	dlDir := GetDownloadDir()
 	if downloadDir != "" {
 		downloadDir, err := homedir.Expand(downloadDir)
@@ -67,11 +67,12 @@ func NewDownloadConfig(downloadDir string) *DownloadConfig {
 		dlDir = downloadDir
 
 	}
-	return &DownloadConfig{DownloadDir: dlDir}
+	return &DownloadConfig{DownloadDir: dlDir, Name: name}
 }
 
 type DownloadConfig struct {
 	DownloadDir string
+	Name        string
 }
 
 // 下载接口
@@ -95,6 +96,26 @@ type Downloader struct {
 	*URI
 	// DownloadDir string
 	Config *DownloadConfig
+}
+
+func (d Downloader) GetName() string {
+	name := d.URI.FullName
+	if d.Config.Name != "" {
+		name = d.Config.Name
+	}
+	return name
+}
+
+func (d Downloader) GetPath() string {
+	return path.Join(d.Config.DownloadDir, d.GetName())
+}
+
+func (d Downloader) GetDir() string {
+	return d.Config.DownloadDir
+}
+
+func (d Downloader) GetCacheDir() string {
+	return path.Join(d.GetDir(), ".dler")
 }
 
 func (d Downloader) Match() bool {
