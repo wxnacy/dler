@@ -31,6 +31,9 @@ func (h Header) GetAcceptRanges() string {
 }
 
 func (h Header) GetContentLength() int {
+	if h.ContentLength == nil || len(h.ContentLength) < 1 {
+		return 0
+	}
 	val, err := strconv.Atoi(h.ContentLength[0])
 	if err != nil {
 		panic(err)
@@ -174,4 +177,5 @@ func (f *FileDownloader) AfterRun() {
 		f.MergeFile()
 	}
 	f.DownloadTasker.AfterRun()
+	os.RemoveAll(f.CacheDir)
 }
