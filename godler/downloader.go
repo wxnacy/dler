@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"path"
+	"strconv"
 	"strings"
 
 	"github.com/mitchellh/go-homedir"
@@ -80,7 +81,7 @@ type IDownloader interface {
 	Match() bool
 	Build()
 	Download(*DownloadInfo) error
-	Process() float32
+	Process() float64
 }
 
 // 初始化 Downloader
@@ -128,7 +129,7 @@ func (d *Downloader) Build() {
 }
 
 // 获取进度
-func (d Downloader) Process() float32 {
+func (d Downloader) Process() float64 {
 	totalNum := len(*d.Segments)
 	processNum := 0
 	for _, seg := range *d.Segments {
@@ -136,7 +137,9 @@ func (d Downloader) Process() float32 {
 			processNum++
 		}
 	}
-	return float32(processNum) / float32(totalNum)
+	process := float64(processNum) / float64(totalNum)
+	process, _ = strconv.ParseFloat(fmt.Sprintf("%.2f", process), 64)
+	return process
 }
 
 func (d Downloader) Download(info *DownloadInfo) error {
