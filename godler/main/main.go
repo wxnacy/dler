@@ -70,13 +70,14 @@ func main() {
 
 	begin := time.Now()
 	if testCommand.Happened() {
-		path := fmt.Sprintf("/Users/wxnacy/Downloads/%d", time.Now().Unix())
-		err := godler.Download(
-			"https://v3-default.ixigua.com/70050e6d79f5ccf082a85126c8f6ed55/62a749b2/video/tos/cn/tos-cn-v-6f4170/9a2aa8ac131d4ab2ba49724c8ce22bbc/?zxzjtv&filename=1.mp4",
-			path,
-			map[string]string{"Range": "bytes=0-1024"},
-		)
-		fmt.Println(err)
+		// path := fmt.Sprintf("/Users/wxnacy/Downloads/%d", time.Now().Unix())
+		// err := godler.Download(
+		// "https://v3-default.ixigua.com/70050e6d79f5ccf082a85126c8f6ed55/62a749b2/video/tos/cn/tos-cn-v-6f4170/9a2aa8ac131d4ab2ba49724c8ce22bbc/?zxzjtv&filename=1.mp4",
+		// path,
+		// map[string]string{"Range": "bytes=0-1024"},
+		// )
+		// fmt.Println(err)
+		// godler.M3U8Downloader{}
 	} else {
 		RunDownloadCommand()
 	}

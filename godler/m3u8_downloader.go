@@ -61,12 +61,12 @@ func (m *M3U8Downloader) Build() {
 func (m *M3U8Downloader) BuildTasks() {
 
 	for _, seg := range *m.Segments {
-		// fmt.Println(seg)
 		info := DownloadInfo{Segment: seg}
 		m.AddTask(&Task{Info: info})
 	}
 }
 
+// 解析 m3u8
 func (m *M3U8Downloader) ParserM3U8() {
 	switch m.M3U8ListType {
 	case m3u8.MEDIA:
@@ -110,11 +110,26 @@ func (m *M3U8Downloader) ParserM3U8() {
 	}
 }
 
+// 保存 m3u8 数据
 func (m M3U8Downloader) SaveM3U8(mediaPlaylist *m3u8.MediaPlaylist) {
 	b, err := ioutil.ReadAll(mediaPlaylist.Encode())
 	if err != nil {
 		panic(err)
 	}
+
+	// 去掉多余 Key
+	m3u8Text := string(b)
+	texts := strings.Split(m3u8Text, "\n")
+	res := make([]string, 0)
+	for _, t := range texts {
+		if strings.HasPrefix(t, "#EXT-X-KEY") {
+			if strings.Contains(t, "URI=\"/") {
+				continue
+			}
+		}
+		res = append(res, t)
+	}
+	b = []byte(strings.Join(res, "\n"))
 
 	WriteFile(m.FormatPath(m.GetName()), b)
 }
