@@ -69,3 +69,9 @@ func RunDownloadTasker(t IDownloadTasker) {
 	t.Run(t.RunTask)
 	t.AfterRun()
 }
+
+func ProcessDownloadTasker(t IDownloadTasker) {
+	t.Build()
+	t.BuildTasks()
+	fmt.Printf("下载进度：%.2f\n", t.Process())
+}

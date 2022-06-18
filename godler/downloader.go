@@ -80,6 +80,7 @@ type IDownloader interface {
 	Match() bool
 	Build()
 	Download(*DownloadInfo) error
+	Process() float32
 }
 
 // 初始化 Downloader
@@ -95,7 +96,8 @@ func NewDownloader(uri string, config *DownloadConfig) (*Downloader, error) {
 type Downloader struct {
 	*URI
 	// DownloadDir string
-	Config *DownloadConfig
+	Config   *DownloadConfig
+	Segments *[]Segment
 }
 
 func (d Downloader) GetName() string {
@@ -123,6 +125,18 @@ func (d Downloader) Match() bool {
 }
 
 func (d *Downloader) Build() {
+}
+
+// 获取进度
+func (d Downloader) Process() float32 {
+	totalNum := len(*d.Segments)
+	processNum := 0
+	for _, seg := range *d.Segments {
+		if FileExists(seg.Path) {
+			processNum++
+		}
+	}
+	return float32(processNum) / float32(totalNum)
 }
 
 func (d Downloader) Download(info *DownloadInfo) error {

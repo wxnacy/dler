@@ -15,6 +15,7 @@ var (
 	uriArg         string
 	downloadDirArg *string
 	nameArg        *string
+	processArg     *bool
 
 	testCommand *argparse.Command
 )
@@ -31,6 +32,8 @@ func InitArgparse() {
 	downloadDirArg = parser.String("", "download-dir", &argparse.Options{Required: false, Help: "String to print"})
 	// 下载名称
 	nameArg = parser.String("n", "name", &argparse.Options{Required: false, Help: "Download Name"})
+	// 获取进度
+	processArg = parser.Flag("p", "--process", &argparse.Options{Required: false, Help: "获取进度"})
 
 	// 测试命令
 	testCommand = parser.NewCommand("test", "测试程序")
@@ -62,6 +65,11 @@ func RunDownloadCommand() {
 	if err != nil {
 		panic(err)
 	}
+
+	if *processArg {
+		godler.ProcessDownloadTasker(t)
+		return
+	}
 	godler.RunDownloadTasker(t)
 
 }
@@ -82,5 +90,5 @@ func main() {
 		RunDownloadCommand()
 	}
 
-	fmt.Println(time.Now().Sub(begin))
+	fmt.Printf("进程耗时：%v\n", time.Now().Sub(begin))
 }

@@ -23,7 +23,6 @@ type M3U8Downloader struct {
 	*DownloadTasker
 	M3U8PlayList m3u8.Playlist
 	M3U8ListType m3u8.ListType
-	Segments     *[]Segment
 }
 
 func (m M3U8Downloader) Match() bool {

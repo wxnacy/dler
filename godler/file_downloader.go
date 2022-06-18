@@ -71,17 +71,17 @@ func NewFileDownloader(dt *DownloadTasker) *FileDownloader {
 	segments := make([]Segment, 0)
 	rangeSegments := make([]RangeSegment, 0)
 	cacheDir := path.Join(dt.GetCacheDir(), dt.GetName())
-	return &FileDownloader{
+	f := &FileDownloader{
 		DownloadTasker: dt,
-		Segments:       &segments,
 		RangeSegments:  &rangeSegments,
 		CacheDir:       cacheDir,
 	}
+	f.Segments = &segments
+	return f
 }
 
 type FileDownloader struct {
 	*DownloadTasker
-	Segments      *[]Segment
 	RangeSegments *[]RangeSegment
 	WithPart      bool
 	CacheDir      string
