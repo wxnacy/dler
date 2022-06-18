@@ -38,11 +38,6 @@ func (m *M3U8Downloader) addSegment(seg Segment) {
 }
 
 func (m *M3U8Downloader) Build() {
-	m3u8Name := m.GetName()
-	m3u8Name = strings.Replace(
-		m3u8Name, path.Ext(m3u8Name), "", 1)
-	m.Downloader.Config.DownloadDir = path.Join(
-		m.Downloader.Config.DownloadDir, m3u8Name)
 
 	// 解析 m3u8 文件
 	reader, err := GetReaderFromURI(m.URI.URI)
@@ -63,6 +58,10 @@ func (m *M3U8Downloader) BuildTasks() {
 		info := DownloadInfo{Segment: seg}
 		m.AddTask(&Task{Info: info})
 	}
+}
+
+func (m M3U8Downloader) FormatPath(uri string) string {
+	return path.Join(m.GetDir(), m.Name, path.Base(uri))
 }
 
 // 解析 m3u8
