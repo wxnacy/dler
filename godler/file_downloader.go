@@ -100,7 +100,7 @@ func (f FileDownloader) Match() bool {
 	return flag
 }
 
-func (f *FileDownloader) BuildDownloader() {
+func (f *FileDownloader) Build() {
 	if !DirExists(f.CacheDir) {
 		os.MkdirAll(f.CacheDir, PermDir)
 	}

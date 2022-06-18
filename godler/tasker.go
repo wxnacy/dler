@@ -10,7 +10,7 @@ import (
 type TaskFunc func(*Task) error
 
 type ITasker interface {
-	BuildTasker()
+	Build()
 	BuildTasks()
 	AddTask(*Task)
 	Run(TaskFunc)
@@ -59,7 +59,7 @@ type Tasker struct {
 
 func (t *Tasker) BuildTasks() {}
 
-func (t *Tasker) BuildTasker() {}
+func (t *Tasker) Build() {}
 
 func (t *Tasker) AfterRun() {}
 

@@ -38,7 +38,7 @@ func (m *M3U8Downloader) addSegment(seg Segment) {
 	*m.Segments = append(*m.Segments, seg)
 }
 
-func (m *M3U8Downloader) BuildDownloader() {
+func (m *M3U8Downloader) Build() {
 	m3u8Name := m.GetName()
 	m3u8Name = strings.Replace(
 		m3u8Name, path.Ext(m3u8Name), "", 1)

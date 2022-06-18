@@ -80,28 +80,6 @@ func main() {
 	} else {
 		RunDownloadCommand()
 	}
-	// args := os.Args[1:]
-
-	// action := args[0]
-
-	// switch action {
-	// case "video":
-	// id := os.Args[2]
-	// godler.DownloadById(id)
-	// case "test":
-	// fmt.Println("")
-	// case "start":
-	// uri := args[1]
-	// t, err := godler.MatchDownloadTasker(
-	// uri, godler.NewDownloadTaskConfig(""),
-	// )
-	// if err != nil {
-	// panic(err)
-	// }
-	// godler.RunDownloadTasker(t)
-	// default:
-	// fmt.Println("不支持的命令")
-	// }
 
 	fmt.Println(time.Now().Sub(begin))
 }

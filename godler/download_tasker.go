@@ -63,8 +63,7 @@ func (d DownloadTasker) RunTask(task *Task) error {
 }
 
 func RunDownloadTasker(t IDownloadTasker) {
-	t.BuildDownloader()
-	t.BuildTasker()
+	t.Build()
 	t.BuildTasks()
 	t.BeforeRun()
 	t.Run(t.RunTask)

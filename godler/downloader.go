@@ -78,7 +78,7 @@ type DownloadConfig struct {
 // 下载接口
 type IDownloader interface {
 	Match() bool
-	BuildDownloader()
+	Build()
 	Download(*DownloadInfo) error
 }
 
@@ -122,7 +122,7 @@ func (d Downloader) Match() bool {
 	return false
 }
 
-func (d *Downloader) BuildDownloader() {
+func (d *Downloader) Build() {
 }
 
 func (d Downloader) Download(info *DownloadInfo) error {
