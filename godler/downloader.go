@@ -47,15 +47,15 @@ func Download(uri string, path string, header map[string]string) error {
 }
 
 type Segment struct {
-	Url    string `json:"url"`
-	Path   string `json:"path"`
-	Header map[string]string
+	Url    string            `json:"url"`
+	Path   string            `json:"path"`
+	Header map[string]string `json:"header"`
 }
 
 type DownloadInfo struct {
 	Segment
-	Type  string
-	Extra interface{}
+	Type  string      `json:"type"`
+	Extra interface{} `json:"extra"`
 }
 
 func NewDownloadConfig(downloadDir string, name string) *DownloadConfig {

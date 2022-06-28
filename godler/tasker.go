@@ -20,9 +20,9 @@ type ITasker interface {
 }
 
 type Task struct {
-	RetryTime int   `json:"retry_count"`
-	Err       error `json:"err"`
-	Info      interface{}
+	RetryTime int         `json:"retry_count"`
+	Err       error       `json:"err"`
+	Info      interface{} `json:"info"`
 }
 
 type TaskerConfig struct {
