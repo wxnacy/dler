@@ -13,6 +13,7 @@ type ITasker interface {
 	Build()
 	BuildTasks()
 	AddTask(*Task)
+	GetTasks() []*Task
 	Run(TaskFunc)
 	AfterRun()
 	BeforeRun()
@@ -32,9 +33,9 @@ type TaskerConfig struct {
 
 func NewTaskerConfig() *TaskerConfig {
 	return &TaskerConfig{
-		ProcessNum: 20,
-		// RetryMaxTime: 99999999,
-		RetryMaxTime:   2,
+		ProcessNum:   20,
+		RetryMaxTime: 99999999,
+		// RetryMaxTime:   2,
 		UseProgressBar: true,
 	}
 }
@@ -67,6 +68,10 @@ func (t *Tasker) BeforeRun() {}
 
 func (t *Tasker) AddTask(task *Task) {
 	t.Tasks = append(t.Tasks, task)
+}
+
+func (t Tasker) GetTasks() []*Task {
+	return t.Tasks
 }
 
 func (t *Tasker) asyncRunTask(runTaskFunc TaskFunc, task *Task) {
