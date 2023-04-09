@@ -3,6 +3,7 @@ package godler
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"net/url"
@@ -10,7 +11,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/asmcos/requests"
+	"github.com/imroc/req/v3"
 )
 
 type IURIFormater interface {
@@ -55,12 +56,15 @@ func GetReaderFromURI(uri string) (io.Reader, error) {
 
 	var reader io.Reader
 	if strings.HasPrefix(uri, "http") {
-
-		resp, err := requests.Get(uri)
-		if err != nil {
-			return nil, err
+		resp := req.MustGet(uri)
+		if resp.IsError() {
+			return nil, errors.New(resp.Status)
 		}
-		reader = strings.NewReader(resp.Text())
+
+		if resp.Err != nil {
+			return nil, resp.Err
+		}
+		reader = strings.NewReader(string(resp.Bytes()))
 	} else {
 
 		f, err := os.Open(uri)
