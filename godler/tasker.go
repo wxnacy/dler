@@ -2,6 +2,7 @@
 package godler
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/cheggaaa/pb/v3"
@@ -15,6 +16,7 @@ type ITasker interface {
 	AddTask(*Task)
 	GetTasks() []*Task
 	Run(TaskFunc)
+	SyncRun(TaskFunc)
 	AfterRun()
 	BeforeRun()
 }
@@ -118,6 +120,25 @@ func (t *Tasker) Run(runTaskFunc TaskFunc) {
 			}
 		}
 	}
+	if t.Config.UseProgressBar {
+		bar.Finish()
+	}
+}
+
+func (t *Tasker) SyncRun(runTaskFunc TaskFunc) {
+
+	var bar *pb.ProgressBar
+	if t.Config.UseProgressBar {
+		bar = pb.Full.Start(len(t.Tasks))
+	}
+	for _, task := range t.Tasks {
+		err := runTaskFunc(task)
+		fmt.Println(err)
+		if t.Config.UseProgressBar {
+			bar.Increment()
+		}
+	}
+
 	if t.Config.UseProgressBar {
 		bar.Finish()
 	}
