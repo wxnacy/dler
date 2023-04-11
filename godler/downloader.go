@@ -4,51 +4,52 @@ package godler
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"net/http"
+	"log"
+	"os"
 	"path"
 	"strconv"
 	"strings"
+	"time"
 
+	"github.com/imroc/req/v3"
 	"github.com/mitchellh/go-homedir"
 )
 
-func HttpGet(uri string, header map[string]string) (*http.Response, error) {
-	req, err := http.NewRequest("GET", uri, nil)
-	if err != nil {
-		return nil, err
-	}
-	for k, v := range header {
-		req.Header.Set(k, v)
-	}
-	client := &http.Client{}
-	return client.Do(req)
-}
+// func HttpGet(uri string, header map[string]string) (*http.Response, error) {
+// req, err := http.NewRequest("GET", uri, nil)
+// if err != nil {
+// return nil, err
+// }
+// for k, v := range header {
+// req.Header.Set(k, v)
+// }
+// client := &http.Client{}
+// return client.Do(req)
+// }
 
-func Download(uri string, path string, header map[string]string) error {
-	if FileExists(path) {
-		return nil
-	}
-	resp, err := HttpGet(uri, header)
-	if err != nil {
-		return err
-	}
-	if resp.StatusCode >= http.StatusMultipleChoices {
-		b, _ := ioutil.ReadAll(resp.Body)
-		return errors.New(string(b))
-	}
-
-	b, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	return WriteFile(path, b)
-}
+// func Download(uri string, path string, header map[string]string) error {
+// if FileExists(path) {
+// return nil
+// }
+// resp, err := HttpGet(uri, header)
+// if err != nil {
+// return err
+// }
+// if resp.StatusCode >= http.StatusMultipleChoices {
+// b, _ := ioutil.ReadAll(resp.Body)
+// return errors.New(string(b))
+// }
+// b, err := ioutil.ReadAll(resp.Body)
+// if err != nil {
+// return err
+// }
+// defer resp.Body.Close()
+// return WriteFile(path, b)
+// }
 
 type Segment struct {
-	Url    string            `json:"url"`
-	Path   string            `json:"path"`
+	Url    string            `json:"url"`  // 下载片段地址
+	Path   string            `json:"path"` // 保存地址
 	Header map[string]string `json:"header"`
 }
 
@@ -68,12 +69,13 @@ func NewDownloadConfig(downloadDir string, name string) *DownloadConfig {
 		dlDir = downloadDir
 
 	}
-	return &DownloadConfig{DownloadDir: dlDir, Name: name}
+	return &DownloadConfig{DownloadDir: dlDir, Name: name, Debug: true}
 }
 
 type DownloadConfig struct {
 	DownloadDir string
 	Name        string
+	Debug       bool
 }
 
 // 下载接口
@@ -90,15 +92,23 @@ func NewDownloader(uri string, config *DownloadConfig) (*Downloader, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Downloader{URI: URI, Config: config}, nil
+	client := req.C().SetTimeout(5 * time.Second)
+	if config.Debug {
+		log_file, _ := os.OpenFile(LoggerPath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+		client.DevMode().
+			SetLogger(req.NewLogger(log_file, "[REQ] ", log.Ldate|log.Lmicroseconds)).
+			EnableDumpAllToFile(LoggerPath).
+			EnableDumpAllWithoutBody()
+	}
+	return &Downloader{URI: URI, Config: config, client: client}, nil
 }
 
 // 下载器父类
 type Downloader struct {
 	*URI
-	// DownloadDir string
-	Config   *DownloadConfig
-	Segments *[]Segment
+	Config   *DownloadConfig // 下载配置
+	Segments *[]Segment      // 下载片段集合
+	client   *req.Client     // 网络请求客户端
 }
 
 func (d Downloader) GetName() string {
@@ -142,8 +152,35 @@ func (d Downloader) Process() float64 {
 	return process
 }
 
+// 对 req 结果报错进行统一处理
+func (d Downloader) checkResponseError(r *req.Response, err error) error {
+	if err != nil {
+		return err
+	}
+	if r.IsError() {
+		return errors.New(r.Status)
+	}
+	return nil
+}
+
 func (d Downloader) Download(info *DownloadInfo) error {
-	return Download(info.Url, info.Path, info.Header)
+	if FileExists(info.Path) {
+		return nil
+	}
+	// r, err := d.client.R().Head(info.Url)
+	// err = d.checkResponseError(r, err)
+	// if err != nil {
+	// return err
+	// }
+
+	// Download to the absolute file path.
+	r, err := d.client.R().SetOutputFile(info.Path).Get(info.Url)
+	err = d.checkResponseError(r, err)
+	if err != nil {
+		os.Remove(info.Path)
+		return err
+	}
+	return nil
 }
 
 func (d Downloader) FormatURI(uri string) string {
