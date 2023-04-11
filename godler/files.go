@@ -2,6 +2,7 @@
 package godler
 
 import (
+	"errors"
 	"io/fs"
 	"io/ioutil"
 	"os"
@@ -28,6 +29,18 @@ func DirExists(dirpath string) bool {
 		return false
 	}
 	return info.IsDir()
+}
+
+// 判断目录是否存在，否则创建
+func DirExistsOrCreate(dirpath string) error {
+	info, err := os.Stat(dirpath)
+	if os.IsNotExist(err) {
+		return os.MkdirAll(dirpath, PermDir)
+	}
+	if !info.IsDir() {
+		return errors.New("%s is exists but is not dir")
+	}
+	return nil
 }
 
 func WriteFile(filePath string, b []byte) error {
