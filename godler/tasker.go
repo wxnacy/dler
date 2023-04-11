@@ -36,7 +36,7 @@ type TaskerConfig struct {
 func NewTaskerConfig() *TaskerConfig {
 	return &TaskerConfig{
 		ProcessNum:   20,
-		RetryMaxTime: 99999999,
+		RetryMaxTime: 1000,
 		// RetryMaxTime:   2,
 		UseProgressBar: true,
 	}
