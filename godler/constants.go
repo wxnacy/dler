@@ -3,6 +3,7 @@ package godler
 
 import (
 	"os"
+	"path/filepath"
 
 	"github.com/mitchellh/go-homedir"
 )
@@ -10,6 +11,16 @@ import (
 const (
 	DOWNLOAD_DIR string = "~/Downloads"
 )
+
+var (
+	LoggerPath string
+)
+
+func init() {
+	cacheDir, _ := homedir.Expand("~/.cache/dler")
+	DirExistsOrCreate(cacheDir)
+	LoggerPath = filepath.Join(cacheDir, "dler.log")
+}
 
 func GetDefaultDownloadDir() string {
 	path, err := homedir.Expand(DOWNLOAD_DIR)
