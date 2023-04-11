@@ -37,27 +37,29 @@ func (m *M3U8Downloader) addSegment(seg Segment) {
 	*m.Segments = append(*m.Segments, seg)
 }
 
-func (m *M3U8Downloader) Build() {
+func (m *M3U8Downloader) Build() error {
 
 	// 解析 m3u8 文件
 	reader, err := GetReaderFromURI(m.URI.URI)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	m.M3U8PlayList, m.M3U8ListType, err = m3u8.DecodeFrom(reader, true)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	m.ParserM3U8()
+	return nil
 }
 
-func (m *M3U8Downloader) BuildTasks() {
+func (m *M3U8Downloader) BuildTasks() error {
 
 	for _, seg := range *m.Segments {
 		info := DownloadInfo{Segment: seg}
 		m.AddTask(&Task{Info: info})
 	}
+	return nil
 }
 
 func (m M3U8Downloader) FormatPath(uri string) string {

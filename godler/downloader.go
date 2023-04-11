@@ -81,7 +81,7 @@ type DownloadConfig struct {
 // 下载接口
 type IDownloader interface {
 	Match() bool
-	Build()
+	Build() error
 	Download(*DownloadInfo) error
 	Process() float64
 }
@@ -135,7 +135,8 @@ func (d Downloader) Match() bool {
 	return false
 }
 
-func (d *Downloader) Build() {
+func (d *Downloader) Build() error {
+	return nil
 }
 
 // 获取进度

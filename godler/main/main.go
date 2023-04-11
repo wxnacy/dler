@@ -70,7 +70,10 @@ func RunDownloadCommand() {
 		godler.ProcessDownloadTasker(t)
 		return
 	}
-	godler.RunDownloadTasker(t)
+	err = godler.RunDownloadTasker(t)
+	if err != nil {
+		panic(err)
+	}
 
 }
 
@@ -78,7 +81,7 @@ func main() {
 
 	begin := time.Now()
 	if testCommand.Happened() {
-		print("test")
+		godler.Log.Infof("w")
 	} else {
 		RunDownloadCommand()
 	}

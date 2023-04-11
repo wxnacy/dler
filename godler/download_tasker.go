@@ -52,8 +52,9 @@ func (d DownloadTasker) parseTask(task *Task) DownloadInfo {
 	return info
 }
 
-func (dt *DownloadTasker) AfterRun() {
+func (dt *DownloadTasker) AfterRun() error {
 	fmt.Println("文件下载完成:", dt.GetPath())
+	return nil
 }
 
 // 运行下载任务
@@ -62,12 +63,29 @@ func (d DownloadTasker) RunTask(task *Task) error {
 	return d.Download(&info)
 }
 
-func RunDownloadTasker(t IDownloadTasker) {
-	t.Build()
-	t.BuildTasks()
-	t.BeforeRun()
-	t.Run(t.RunTask)
-	t.AfterRun()
+func RunDownloadTasker(t IDownloadTasker) error {
+	var err error
+	err = t.Build()
+	if err != nil {
+		return err
+	}
+	err = t.BuildTasks()
+	if err != nil {
+		return err
+	}
+	err = t.BeforeRun()
+	if err != nil {
+		return err
+	}
+	err = t.Run(t.RunTask)
+	if err != nil {
+		return err
+	}
+	err = t.AfterRun()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func ProcessDownloadTasker(t IDownloadTasker) {

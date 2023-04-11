@@ -11,14 +11,14 @@ import (
 type TaskFunc func(*Task) error
 
 type ITasker interface {
-	Build()
-	BuildTasks()
+	Build() error
+	BuildTasks() error
 	AddTask(*Task)
 	GetTasks() []*Task
-	Run(TaskFunc)
-	SyncRun(TaskFunc)
-	AfterRun()
-	BeforeRun()
+	Run(TaskFunc) error
+	SyncRun(TaskFunc) error
+	AfterRun() error
+	BeforeRun() error
 }
 
 type Task struct {
@@ -60,13 +60,13 @@ type Tasker struct {
 	WaitGroup   sync.WaitGroup
 }
 
-func (t *Tasker) BuildTasks() {}
+func (t *Tasker) BuildTasks() error { return nil }
 
-func (t *Tasker) Build() {}
+func (t *Tasker) Build() error { return nil }
 
-func (t *Tasker) AfterRun() {}
+func (t *Tasker) AfterRun() error { return nil }
 
-func (t *Tasker) BeforeRun() {}
+func (t *Tasker) BeforeRun() error { return nil }
 
 func (t *Tasker) AddTask(task *Task) {
 	t.Tasks = append(t.Tasks, task)
@@ -89,7 +89,7 @@ func (t *Tasker) asyncRunTask(runTaskFunc TaskFunc, task *Task) {
 	}(task)
 }
 
-func (t *Tasker) Run(runTaskFunc TaskFunc) {
+func (t *Tasker) Run(runTaskFunc TaskFunc) error {
 
 	for _, task := range t.Tasks {
 		t.asyncRunTask(runTaskFunc, task)
@@ -123,9 +123,10 @@ func (t *Tasker) Run(runTaskFunc TaskFunc) {
 	if t.Config.UseProgressBar {
 		bar.Finish()
 	}
+	return nil
 }
 
-func (t *Tasker) SyncRun(runTaskFunc TaskFunc) {
+func (t *Tasker) SyncRun(runTaskFunc TaskFunc) error {
 
 	var bar *pb.ProgressBar
 	if t.Config.UseProgressBar {
@@ -142,4 +143,5 @@ func (t *Tasker) SyncRun(runTaskFunc TaskFunc) {
 	if t.Config.UseProgressBar {
 		bar.Finish()
 	}
+	return nil
 }

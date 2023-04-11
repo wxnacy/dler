@@ -100,18 +100,18 @@ func (f FileDownloader) Match() bool {
 	return flag
 }
 
-func (f *FileDownloader) Build() {
+func (f *FileDownloader) Build() error {
 	if !DirExists(f.CacheDir) {
 		os.MkdirAll(f.CacheDir, PermDir)
 	}
 	resp, err := http.Head(f.URI.URI)
 	if err != nil {
-		panic(err)
+		return nil
 	}
 	header := &Header{}
 	err = header.ConverHttpHeader(resp.Header)
 	if err != nil {
-		panic(err)
+		return nil
 	}
 	if resp.ContentLength > int64(SEGMENT_SIZE) {
 		f.WithPart = true
@@ -119,6 +119,7 @@ func (f *FileDownloader) Build() {
 	defer resp.Body.Close()
 	rangeSegments := header.GetRangeSegments(SEGMENT_SIZE)
 	*f.RangeSegments = rangeSegments
+	return nil
 }
 
 func (f *FileDownloader) buildRangeTasks() {
@@ -141,7 +142,7 @@ func (f *FileDownloader) buildRangeTasks() {
 	}
 }
 
-func (f *FileDownloader) BuildTasks() {
+func (f *FileDownloader) BuildTasks() error {
 
 	if f.WithPart {
 		f.buildRangeTasks()
@@ -153,6 +154,7 @@ func (f *FileDownloader) BuildTasks() {
 		*f.Segments = append(*f.Segments, seg)
 		f.AddTask(&Task{Info: DownloadInfo{Segment: seg}})
 	}
+	return nil
 }
 
 func (f FileDownloader) MergeFile() {
@@ -172,10 +174,11 @@ func (f FileDownloader) MergeFile() {
 	fmt.Println("合并文件成功")
 }
 
-func (f *FileDownloader) AfterRun() {
+func (f *FileDownloader) AfterRun() error {
 	if f.WithPart {
 		f.MergeFile()
 	}
 	f.DownloadTasker.AfterRun()
 	os.RemoveAll(f.CacheDir)
+	return nil
 }
