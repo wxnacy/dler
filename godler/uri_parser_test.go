@@ -1,7 +1,9 @@
 // Package godler  provides ...
 package godler
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestParseURI(t *testing.T) {
 	uri := "https://b.baobuzz.com/m3u8/566008.m3u8?sign=01de7dde6556f2f8cd01d2b85a170585"
@@ -27,5 +29,18 @@ func TestParseURI(t *testing.T) {
 
 	if URI.Dirname != "https://b.baobuzz.com/m3u8" {
 		t.Errorf("%v Dirname is error", URI)
+	}
+}
+
+func TestGetReaderFromURI(t *testing.T) {
+	uri := "https://ipconfig.io/country"
+	str := "China\n"
+	r, err := GetReaderFromURI(uri)
+	if err != nil {
+		t.Error(err)
+	}
+	s, _ := ReaderToString(r)
+	if s != str {
+		t.Error(s)
 	}
 }
