@@ -8,6 +8,7 @@ require (
 	github.com/grafov/m3u8 v0.11.1
 	github.com/imroc/req/v3 v3.33.2
 	github.com/mitchellh/go-homedir v1.1.0
+	github.com/wxnacy/gotool v0.0.4
 )
 
 require (
@@ -35,3 +36,5 @@ require (
 	golang.org/x/text v0.9.0 // indirect
 	golang.org/x/tools v0.8.0 // indirect
 )
+
+// replace github.com/wxnacy/gotool => /Users/wxnacy/Documents/Projects/wxnacy/gotool
