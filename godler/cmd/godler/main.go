@@ -29,7 +29,7 @@ func InitArgparse() {
 	parser := argparse.NewParser("godler", "Download file manager")
 
 	// Create string flag
-	downloadDirArg = parser.String("", "download-dir", &argparse.Options{Required: false, Help: "String to print"})
+	downloadDirArg = parser.String("d", "download-dir", &argparse.Options{Required: false, Help: "String to print"})
 	// 下载名称
 	nameArg = parser.String("n", "name", &argparse.Options{Required: false, Help: "Download Name"})
 	// 获取进度
