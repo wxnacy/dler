@@ -14,12 +14,3 @@ func TestFileExists(t *testing.T) {
 		t.Error("123files_test.go is not exists")
 	}
 }
-
-func TestDirExists(t *testing.T) {
-	if !DirExists("main") {
-		t.Error("main is dir")
-	}
-	if DirExists("files.go") {
-		t.Error("files.go is not dir")
-	}
-}

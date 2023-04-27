@@ -3,6 +3,8 @@ package godler
 
 import (
 	"testing"
+
+	"github.com/wxnacy/gotool"
 )
 
 func TestParseURI(t *testing.T) {
@@ -39,7 +41,7 @@ func TestGetReaderFromURI(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	s, _ := ReaderToString(r)
+	s, _ := gotool.StringFromReader(r)
 	if s != str {
 		t.Error(s)
 	}

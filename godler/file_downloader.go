@@ -10,6 +10,8 @@ import (
 	"path"
 	"regexp"
 	"strconv"
+
+	"github.com/wxnacy/gotool"
 )
 
 const (
@@ -101,7 +103,7 @@ func (f FileDownloader) Match() bool {
 }
 
 func (f *FileDownloader) Build() error {
-	if !DirExists(f.CacheDir) {
+	if !gotool.DirExists(f.CacheDir) {
 		os.MkdirAll(f.CacheDir, PermDir)
 	}
 	resp, err := http.Head(f.URI.URI)
