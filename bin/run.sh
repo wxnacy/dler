@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-cd godler && go run main/main.go $@ && cd --
+cd godler && go run cmd/godler/main.go $@ && cd --
