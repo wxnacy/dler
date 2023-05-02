@@ -95,7 +95,7 @@ type FileDownloader struct {
 // }
 
 func (f FileDownloader) Match() bool {
-	flag, err := regexp.Match("http.*", []byte(f.URI.URI))
+	flag, err := regexp.Match("http.*", []byte(f.URL.String()))
 	if err != nil {
 		return false
 	}
@@ -106,7 +106,7 @@ func (f *FileDownloader) Build() error {
 	if !gotool.DirExists(f.CacheDir) {
 		os.MkdirAll(f.CacheDir, PermDir)
 	}
-	resp, err := http.Head(f.URI.URI)
+	resp, err := http.Head(f.URL.String())
 	if err != nil {
 		return nil
 	}
@@ -133,7 +133,7 @@ func (f *FileDownloader) buildRangeTasks() {
 
 		p := path.Join(f.CacheDir, headerRange)
 		seg := Segment{
-			Url:    f.URI.URI,
+			Url:    f.URL.String(),
 			Path:   p,
 			Header: header,
 		}
@@ -150,7 +150,7 @@ func (f *FileDownloader) BuildTasks() error {
 		f.buildRangeTasks()
 	} else {
 		seg := Segment{
-			Url:  f.URI.URI,
+			Url:  f.URL.String(),
 			Path: f.GetPath(),
 		}
 		*f.Segments = append(*f.Segments, seg)

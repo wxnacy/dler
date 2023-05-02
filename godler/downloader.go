@@ -13,6 +13,7 @@ import (
 
 	"github.com/imroc/req/v3"
 	"github.com/mitchellh/go-homedir"
+	"github.com/wxnacy/go-tools"
 )
 
 // func HttpGet(uri string, header map[string]string) (*http.Response, error) {
@@ -88,7 +89,7 @@ type IDownloader interface {
 
 // 初始化 Downloader
 func NewDownloader(uri string, config *DownloadConfig) (*Downloader, error) {
-	URI, err := ParseURI(uri)
+	URI, err := tools.URLParse(uri)
 	if err != nil {
 		return nil, err
 	}
@@ -100,19 +101,19 @@ func NewDownloader(uri string, config *DownloadConfig) (*Downloader, error) {
 			EnableDumpAllToFile(LoggerPath).
 			EnableDumpAllWithoutBody()
 	}
-	return &Downloader{URI: URI, Config: config, client: client}, nil
+	return &Downloader{URL: URI, Config: config, client: client}, nil
 }
 
 // 下载器父类
 type Downloader struct {
-	*URI
+	*tools.URL
 	Config   *DownloadConfig // 下载配置
 	Segments *[]Segment      // 下载片段集合
 	client   *req.Client     // 网络请求客户端
 }
 
 func (d Downloader) GetName() string {
-	name := d.URI.FullName
+	name := d.URL.FullName
 	if d.Config.Name != "" {
 		name = d.Config.Name
 	}
@@ -190,7 +191,7 @@ func (d Downloader) FormatURI(uri string) string {
 	} else if strings.HasPrefix(uri, "/") {
 		return d.Homepage + uri
 	}
-	return fmt.Sprintf("%s/%s", d.Dirname, uri)
+	return fmt.Sprintf("%s/%s", d.Dir, uri)
 }
 
 func (d Downloader) FormatPath(uri string) string {

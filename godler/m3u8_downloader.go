@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/grafov/m3u8"
+	"github.com/wxnacy/go-tools"
 )
 
 func NewM3U8Downloader(dt *DownloadTasker) *M3U8Downloader {
@@ -26,7 +27,7 @@ type M3U8Downloader struct {
 }
 
 func (m M3U8Downloader) Match() bool {
-	flag, err := regexp.Match("http.*m3u8.*", []byte(m.URI.URI))
+	flag, err := regexp.Match("http.*m3u8.*", []byte(m.URL.String()))
 	if err != nil {
 		return false
 	}
@@ -40,7 +41,7 @@ func (m *M3U8Downloader) addSegment(seg Segment) {
 func (m *M3U8Downloader) Build() error {
 
 	// 解析 m3u8 文件
-	reader, err := GetReaderFromURI(m.URI.URI)
+	reader, err := GetReaderFromURI(m.URL.String())
 	if err != nil {
 		return err
 	}
@@ -79,7 +80,7 @@ func (m *M3U8Downloader) ParserM3U8() {
 				Url: m.FormatURI(key.URI), Path: m.FormatPath(key.URI),
 			})
 
-			_URI, err := ParseURI(key.URI)
+			_URI, err := tools.URLParse(key.URI)
 			if err != nil {
 				panic(err)
 			}
@@ -97,7 +98,7 @@ func (m *M3U8Downloader) ParserM3U8() {
 				Url: m.FormatURI(seg.URI), Path: m.FormatPath(seg.URI),
 			})
 
-			_URI, err := ParseURI(seg.URI)
+			_URI, err := tools.URLParse(seg.URI)
 			if err != nil {
 				panic(err)
 			}
