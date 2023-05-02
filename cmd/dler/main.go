@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/akamensky/argparse"
-	"github.com/wxnacy/dler/godler"
+	"github.com/wxnacy/dler"
 )
 
 var (
@@ -26,7 +26,7 @@ func init() {
 }
 
 func InitArgparse() {
-	parser := argparse.NewParser("godler", "Download file manager")
+	parser := argparse.NewParser("dler", "Download file manager")
 
 	// Create string flag
 	downloadDirArg = parser.String("d", "download-dir", &argparse.Options{Required: false, Help: "String to print"})
@@ -59,18 +59,18 @@ func ParserURIArg() {
 
 // 运行下载命令
 func RunDownloadCommand() {
-	t, err := godler.MatchDownloadTasker(
-		uriArg, godler.NewDownloadTaskConfig(*downloadDirArg, *nameArg),
+	t, err := dler.MatchDownloadTasker(
+		uriArg, dler.NewDownloadTaskConfig(*downloadDirArg, *nameArg),
 	)
 	if err != nil {
 		panic(err)
 	}
 
 	if *processArg {
-		godler.ProcessDownloadTasker(t)
+		dler.ProcessDownloadTasker(t)
 		return
 	}
-	err = godler.RunDownloadTasker(t)
+	err = dler.RunDownloadTasker(t)
 	if err != nil {
 		panic(err)
 	}
@@ -81,7 +81,7 @@ func main() {
 
 	begin := time.Now()
 	if testCommand.Happened() {
-		godler.Log.Infof("w")
+		dler.Log.Infof("w")
 	} else {
 		RunDownloadCommand()
 	}

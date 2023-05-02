@@ -1,5 +1,5 @@
 // Package godler  provides ...
-package godler
+package dler
 
 import (
 	"io/ioutil"

@@ -1,4 +1,4 @@
-package godler
+package dler
 
 import (
 	"fmt"
