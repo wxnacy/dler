@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/mitchellh/go-homedir"
-	"github.com/wxnacy/gotool"
+	"github.com/wxnacy/go-tools"
 )
 
 const (
@@ -14,12 +14,12 @@ const (
 )
 
 var (
-	LoggerPath string
+	LoggerPath  string
+	cacheDir, _ = homedir.Expand("~/.cache/dler")
 )
 
 func init() {
-	cacheDir, _ := homedir.Expand("~/.cache/dler")
-	gotool.DirExistsOrCreate(cacheDir)
+	tools.DirExistsOrCreate(cacheDir)
 	LoggerPath = filepath.Join(cacheDir, "dler.log")
 }
 
