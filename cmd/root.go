@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -22,11 +23,30 @@ var (
 
 type RootCommand struct {
 	url           string
-	output        string
+	outputPath    string
+	outputDir     string
 	IsShowProcess bool
+	headers       []string
+	isVerbose     bool
+}
+
+func (r RootCommand) GetHeaders() map[string]string {
+	headers := make(map[string]string, 0)
+	for _, h := range r.headers {
+		hArr := strings.SplitN(h, ":", 2)
+		headers[hArr[0]] = strings.TrimLeft(hArr[1], " ")
+	}
+	return headers
+}
+
+func (r *RootCommand) init() {
+	if r.isVerbose {
+		dler.GetGlobalRequst().EnableVerbose()
+	}
 }
 
 func (r *RootCommand) Run(args []string) error {
+	r.init()
 	if len(args) > 0 {
 		r.url = args[0]
 	}
@@ -39,7 +59,7 @@ func (r *RootCommand) Run(args []string) error {
 	}
 
 	var downloadDir, name string
-	path := r.output
+	path := r.outputPath
 	if path != "" {
 		if tools.DirExists(path) {
 			downloadDir = path
@@ -47,12 +67,21 @@ func (r *RootCommand) Run(args []string) error {
 			dir := filepath.Dir(path)
 			if tools.DirExists(dir) {
 				downloadDir = dir
-				// name = filepath.Base(path)
+				name = filepath.Base(path)
 			} else {
 				return fmt.Errorf("%s 文件夹不存在", dir)
 			}
 		}
 	}
+	// 设置 headers
+	headers := r.GetHeaders()
+	if len(headers) > 0 {
+		dler.GetGlobalRequst().SetHeaders(headers)
+	}
+	return dler.NewFileDownloadTasker(r.url).
+		SetOutputDir(r.outputDir).
+		SetOutputPath(r.outputPath).
+		Exec()
 	t, err := dler.MatchDownloadTasker(
 		r.url, dler.NewDownloadTaskConfig(downloadDir, name),
 	)
@@ -65,7 +94,9 @@ func (r *RootCommand) Run(args []string) error {
 	}
 	begin := time.Now()
 	err = dler.RunDownloadTasker(t)
-	fmt.Printf("下载完成耗时：%v\n", time.Now().Sub(begin))
+	if err == nil {
+		fmt.Printf("下载完成耗时：%v\n", time.Now().Sub(begin))
+	}
 	return err
 }
 
@@ -93,6 +124,10 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.Flags().StringVarP(&rootCommand.output, "output", "o", "", "保存地址。如果指定文件夹则使用地址名称保存该文件夹中，如果不是则覆盖文件保存")
+	pwd, _ := os.Getwd()
+	rootCmd.Flags().StringVarP(&rootCommand.outputDir, "output-dir", "d", pwd, "保存目录。默认为当前目录")
+	rootCmd.Flags().StringVarP(&rootCommand.outputPath, "output-path", "o", "", "保存地址。覆盖已存在文件，优先级比 --output-dir 高")
 	rootCmd.Flags().BoolVarP(&rootCommand.IsShowProcess, "process", "p", false, "仅展示已下载的进度")
+	rootCmd.Flags().StringArrayVarP(&rootCommand.headers, "header", "H", []string{}, "携带的头信息")
+	rootCmd.PersistentFlags().BoolVarP(&rootCommand.isVerbose, "verbose", "v", false, "打印赘余信息")
 }
