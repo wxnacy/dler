@@ -3,12 +3,10 @@ package dler
 
 import (
 	"bufio"
-	"errors"
+	"bytes"
 	"io"
 	"os"
 	"strings"
-
-	"github.com/imroc/req/v3"
 )
 
 type IURIFormater interface {
@@ -24,15 +22,11 @@ func GetReaderFromURI(uri string) (io.Reader, error) {
 
 	var reader io.Reader
 	if strings.HasPrefix(uri, "http") {
-		resp := req.MustGet(uri)
-		if resp.IsError() {
-			return nil, errors.New(resp.Status)
+		b, err := GetGlobalRequst().GetBytes(uri)
+		if err != nil {
+			return nil, err
 		}
-
-		if resp.Err != nil {
-			return nil, resp.Err
-		}
-		reader = strings.NewReader(string(resp.Bytes()))
+		reader = bytes.NewReader(b)
 	} else {
 
 		f, err := os.Open(uri)

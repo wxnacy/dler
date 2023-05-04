@@ -169,20 +169,11 @@ func (d Downloader) Download(info *DownloadInfo) error {
 	if FileExists(info.Path) {
 		return nil
 	}
-	// r, err := d.client.R().Head(info.Url)
-	// err = d.checkResponseError(r, err)
-	// if err != nil {
-	// return err
-	// }
-
-	// Download to the absolute file path.
-	r, err := d.client.R().SetOutputFile(info.Path).Get(info.Url)
-	err = d.checkResponseError(r, err)
+	b, err := GetGlobalRequst().GetBytes(info.Url)
 	if err != nil {
-		os.Remove(info.Path)
 		return err
 	}
-	return nil
+	return WriteFile(info.Path, b)
 }
 
 func (d Downloader) FormatURI(uri string) string {
