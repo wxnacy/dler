@@ -2,7 +2,6 @@ package dler
 
 import (
 	"fmt"
-	"io"
 	"mime"
 	"os"
 	"path/filepath"
@@ -13,13 +12,19 @@ import (
 	"github.com/wxnacy/go-tools"
 )
 
+type OutputFunc func(a string)
+
+func outputFunc(a string) {
+	fmt.Println(a)
+}
+
 func NewFileDownloadTasker(url string) *FileDownloadTasker {
 	t := tasker.NewTasker()
 	return &FileDownloadTasker{
 		Tasker:      t,
 		RawURL:      url,
 		segmentSize: 8 * (1 << 20), // 单个分片大小
-		Out:         os.Stdout,
+		OutputFunc:  outputFunc,
 	}
 }
 
@@ -33,9 +38,9 @@ type FileDownloadTaskInfo struct {
 type FileDownloadTasker struct {
 	*tasker.Tasker
 	// 迁移的地址
-	RawURL string
-	URL    *tools.URL
-	Out    io.Writer
+	RawURL     string
+	URL        *tools.URL
+	OutputFunc OutputFunc
 
 	contentLength int
 	segmentSize   int
@@ -125,7 +130,8 @@ func (d FileDownloadTasker) RunTask(task *tasker.Task) error {
 
 func (d *FileDownloadTasker) BeforeRun() error {
 	tools.DirExistsOrCreate(d.cacheDir)
-	fmt.Fprintf(d.Out, "下载地址: %s\n", d.GetDownloadPath())
+	out := fmt.Sprintf("下载地址: %s\n", d.GetDownloadPath())
+	d.OutputFunc(out)
 	return nil
 }
 
@@ -133,7 +139,8 @@ func (d *FileDownloadTasker) Exec() error {
 	begin := time.Now()
 	err := tasker.ExecTasker(d, d.isSync)
 	if err == nil {
-		fmt.Fprintf(d.Out, "下载完成，耗时：%v\n", time.Now().Sub(begin))
+		out := fmt.Sprintf("下载完成，耗时：%v\n", time.Now().Sub(begin))
+		d.OutputFunc(out)
 	}
 	return err
 }
@@ -177,10 +184,5 @@ func (d *FileDownloadTasker) SetDownloadPath(path string) *FileDownloadTasker {
 
 func (d *FileDownloadTasker) SetDownloadDir(dir string) *FileDownloadTasker {
 	d.outputDir = dir
-	return d
-}
-
-func (d *FileDownloadTasker) SetOutput(w io.Writer) *FileDownloadTasker {
-	d.Out = w
 	return d
 }
