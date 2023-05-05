@@ -7,14 +7,11 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
-	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/wxnacy/dler"
-	"github.com/wxnacy/go-tools"
 )
 
 var (
@@ -39,17 +36,7 @@ func (r RootCommand) GetHeaders() map[string]string {
 	return headers
 }
 
-func (r *RootCommand) init() {
-	if r.isVerbose {
-		dler.GetGlobalRequst().EnableVerbose()
-	}
-}
-
-func (r *RootCommand) Run(args []string) error {
-	r.init()
-	if len(args) > 0 {
-		r.url = args[0]
-	}
+func (r *RootCommand) init() error {
 	isUrl, err := regexp.MatchString("^http.*", r.url)
 	if err != nil {
 		return err
@@ -57,46 +44,26 @@ func (r *RootCommand) Run(args []string) error {
 	if !isUrl {
 		return fmt.Errorf("%s 不符合 URL 标准", r.url)
 	}
-
-	var downloadDir, name string
-	path := r.outputPath
-	if path != "" {
-		if tools.DirExists(path) {
-			downloadDir = path
-		} else {
-			dir := filepath.Dir(path)
-			if tools.DirExists(dir) {
-				downloadDir = dir
-				name = filepath.Base(path)
-			} else {
-				return fmt.Errorf("%s 文件夹不存在", dir)
-			}
-		}
+	if r.isVerbose {
+		dler.GetGlobalRequst().EnableVerbose()
 	}
 	// 设置 headers
 	headers := r.GetHeaders()
 	if len(headers) > 0 {
 		dler.GetGlobalRequst().SetHeaders(headers)
 	}
-	return dler.NewFileDownloadTasker(r.url).
-		SetOutputDir(r.outputDir).
-		SetOutputPath(r.outputPath).
-		Exec()
-	t, err := dler.MatchDownloadTasker(
-		r.url, dler.NewDownloadTaskConfig(downloadDir, name),
-	)
-	if err != nil {
-		return err
+	return nil
+}
+
+func (r *RootCommand) Run(args []string) error {
+	if len(args) > 0 {
+		r.url = args[0]
 	}
-	if r.IsShowProcess {
-		dler.ProcessDownloadTasker(t)
-		return nil
-	}
-	begin := time.Now()
-	err = dler.RunDownloadTasker(t)
-	if err == nil {
-		fmt.Printf("下载完成耗时：%v\n", time.Now().Sub(begin))
-	}
+	r.init()
+	dlTasker := dler.NewFileDownloadTasker(r.url).
+		SetDownloadDir(r.outputDir).
+		SetDownloadPath(r.outputPath)
+	err := dlTasker.Exec()
 	return err
 }
 
