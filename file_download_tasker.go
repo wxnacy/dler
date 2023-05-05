@@ -2,10 +2,12 @@ package dler
 
 import (
 	"fmt"
+	"io"
 	"mime"
 	"os"
 	"path/filepath"
 	"strconv"
+	"time"
 
 	"github.com/wxnacy/go-tasker"
 	"github.com/wxnacy/go-tools"
@@ -17,6 +19,7 @@ func NewFileDownloadTasker(url string) *FileDownloadTasker {
 		Tasker:      t,
 		RawURL:      url,
 		segmentSize: 8 * (1 << 20), // 单个分片大小
+		Out:         os.Stdout,
 	}
 }
 
@@ -32,6 +35,7 @@ type FileDownloadTasker struct {
 	// 迁移的地址
 	RawURL string
 	URL    *tools.URL
+	Out    io.Writer
 
 	contentLength int
 	segmentSize   int
@@ -42,6 +46,7 @@ type FileDownloadTasker struct {
 	filename      string
 	outputDir     string // 手动置顶的保存目录
 	outputPath    string // 手动指定的保存地址，优先级比 dir 高
+	downloadPath  string
 }
 
 func (d *FileDownloadTasker) Build() error {
@@ -73,6 +78,7 @@ func (d *FileDownloadTasker) Build() error {
 			d.filename = filename
 		}
 	}
+	d.buildDownloadPath()
 	return nil
 }
 
@@ -119,18 +125,31 @@ func (d FileDownloadTasker) RunTask(task *tasker.Task) error {
 
 func (d *FileDownloadTasker) BeforeRun() error {
 	tools.DirExistsOrCreate(d.cacheDir)
+	fmt.Fprintf(d.Out, "下载地址: %s\n", d.GetDownloadPath())
 	return nil
 }
 
 func (d *FileDownloadTasker) Exec() error {
-	return tasker.ExecTasker(d, d.isSync)
+	begin := time.Now()
+	err := tasker.ExecTasker(d, d.isSync)
+	if err == nil {
+		fmt.Fprintf(d.Out, "下载完成，耗时：%v\n", time.Now().Sub(begin))
+	}
+	return err
 }
 
 // 获取下载地址
 func (d *FileDownloadTasker) GetDownloadPath() string {
 	// 优先使用 outputPath
+	if d.downloadPath == "" {
+		d.buildDownloadPath()
+	}
+	return d.downloadPath
+}
+func (d *FileDownloadTasker) buildDownloadPath() {
+	// 优先使用 outputPath
 	if d.outputPath != "" {
-		return d.outputPath
+		d.downloadPath = d.outputPath
 	}
 	var dir, filename string
 	if d.outputDir != "" {
@@ -141,9 +160,9 @@ func (d *FileDownloadTasker) GetDownloadPath() string {
 	if d.filename != "" {
 		filename = d.filename
 	} else {
-		filename = d.URL.FullName
+		filename = filepath.Base(d.RawURL)
 	}
-	return tools.FileAutoReDownloadName(filepath.Join(dir, filename))
+	d.downloadPath = tools.FileAutoReDownloadName(filepath.Join(dir, filename))
 }
 
 func (d *FileDownloadTasker) SetSegmentSize(s int) *FileDownloadTasker {
@@ -151,11 +170,17 @@ func (d *FileDownloadTasker) SetSegmentSize(s int) *FileDownloadTasker {
 	return d
 }
 
-func (d *FileDownloadTasker) SetOutputPath(path string) *FileDownloadTasker {
+func (d *FileDownloadTasker) SetDownloadPath(path string) *FileDownloadTasker {
 	d.outputPath = path
 	return d
 }
-func (d *FileDownloadTasker) SetOutputDir(dir string) *FileDownloadTasker {
+
+func (d *FileDownloadTasker) SetDownloadDir(dir string) *FileDownloadTasker {
 	d.outputDir = dir
+	return d
+}
+
+func (d *FileDownloadTasker) SetOutput(w io.Writer) *FileDownloadTasker {
+	d.Out = w
 	return d
 }
