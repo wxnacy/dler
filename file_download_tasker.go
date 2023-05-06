@@ -2,6 +2,7 @@ package dler
 
 import (
 	"fmt"
+	"io"
 	"mime"
 	"os"
 	"path/filepath"
@@ -12,19 +13,24 @@ import (
 	"github.com/wxnacy/go-tools"
 )
 
-type OutputFunc func(a string)
+type OutputFunc func(w io.Writer, out string)
 
-func outputFunc(a string) {
-	fmt.Println(a)
+func outputFunc(w io.Writer, out string) {
+	fmt.Fprintln(w, out)
 }
 
 func NewFileDownloadTasker(url string) *FileDownloadTasker {
 	t := tasker.NewTasker()
+	id := tools.Md5(url)
 	return &FileDownloadTasker{
 		Tasker:      t,
 		RawURL:      url,
-		segmentSize: 8 * (1 << 20), // 单个分片大小
+		Out:         os.Stdout,
 		OutputFunc:  outputFunc,
+		Request:     GetGlobalRequst(),
+		segmentSize: 8 * (1 << 20), // 单个分片大小
+		id:          id,
+		cacheDir:    filepath.Join(cacheDir, id),
 	}
 }
 
@@ -41,6 +47,8 @@ type FileDownloadTasker struct {
 	RawURL     string
 	URL        *tools.URL
 	OutputFunc OutputFunc
+	Out        io.Writer
+	Request    *Request
 
 	contentLength int
 	segmentSize   int
@@ -56,15 +64,13 @@ type FileDownloadTasker struct {
 
 func (d *FileDownloadTasker) Build() error {
 	var err error
-	d.id = tools.Md5(d.RawURL)
-	d.cacheDir = filepath.Join(cacheDir, d.id)
 	// 构建 URL
 	d.URL, err = tools.URLParse(d.RawURL)
 	if err != nil {
 		return err
 	}
 	// 获取头信息
-	headers, err := GetGlobalRequst().Head(d.RawURL)
+	headers, err := d.Request.Head(d.RawURL)
 	if err != nil {
 		return err
 	}
@@ -84,6 +90,11 @@ func (d *FileDownloadTasker) Build() error {
 		}
 	}
 	d.buildDownloadPath()
+	// 检查下载地址是否合法
+	downloadDir := filepath.Dir(d.downloadPath)
+	if !tools.DirExists(downloadDir) {
+		return fmt.Errorf("%s 目录不存在", downloadDir)
+	}
 	return nil
 }
 
@@ -121,7 +132,7 @@ func (d *FileDownloadTasker) BuildTasks() error {
 
 func (d FileDownloadTasker) RunTask(task *tasker.Task) error {
 	info := task.Info.(FileDownloadTaskInfo)
-	bytes, err := GetGlobalRequst().GetBytesByRange(d.RawURL, info.RangeStart, info.RangeEnd)
+	bytes, err := d.Request.GetBytesByRange(d.RawURL, info.RangeStart, info.RangeEnd)
 	if err != nil {
 		return err
 	}
@@ -130,8 +141,8 @@ func (d FileDownloadTasker) RunTask(task *tasker.Task) error {
 
 func (d *FileDownloadTasker) BeforeRun() error {
 	tools.DirExistsOrCreate(d.cacheDir)
-	out := fmt.Sprintf("下载地址: %s\n", d.GetDownloadPath())
-	d.OutputFunc(out)
+	out := fmt.Sprintf("下载地址: %s", d.GetDownloadPath())
+	d.OutputFunc(d.Out, out)
 	return nil
 }
 
@@ -139,8 +150,8 @@ func (d *FileDownloadTasker) Exec() error {
 	begin := time.Now()
 	err := tasker.ExecTasker(d, d.isSync)
 	if err == nil {
-		out := fmt.Sprintf("下载完成，耗时：%v\n", time.Now().Sub(begin))
-		d.OutputFunc(out)
+		out := fmt.Sprintf("下载完成，耗时：%v", time.Now().Sub(begin))
+		d.OutputFunc(d.Out, out)
 	}
 	return err
 }
@@ -157,6 +168,7 @@ func (d *FileDownloadTasker) buildDownloadPath() {
 	// 优先使用 outputPath
 	if d.outputPath != "" {
 		d.downloadPath = d.outputPath
+		return
 	}
 	var dir, filename string
 	if d.outputDir != "" {
@@ -184,5 +196,10 @@ func (d *FileDownloadTasker) SetDownloadPath(path string) *FileDownloadTasker {
 
 func (d *FileDownloadTasker) SetDownloadDir(dir string) *FileDownloadTasker {
 	d.outputDir = dir
+	return d
+}
+
+func (d *FileDownloadTasker) SetCacheDir(dir string) *FileDownloadTasker {
+	d.cacheDir = filepath.Join(dir, d.id)
 	return d
 }
