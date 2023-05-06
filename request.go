@@ -66,6 +66,9 @@ func (r *Request) Head(url string) (http.Header, error) {
 	if err != nil {
 		return resp.Header, err
 	}
+	if r.isVerbose {
+		fmt.Printf("%s Header: %s", url, resp.HeaderToString())
+	}
 	return resp.Header, nil
 }
 
