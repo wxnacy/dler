@@ -23,6 +23,7 @@ type RootCommand struct {
 	outputPath    string
 	outputDir     string
 	IsShowProcess bool
+	isNotCover    bool
 	headers       []string
 	isVerbose     bool
 }
@@ -63,6 +64,7 @@ func (r *RootCommand) Run(args []string) error {
 	dlTasker := dler.NewFileDownloadTasker(r.url).
 		SetDownloadDir(r.outputDir).
 		SetDownloadPath(r.outputPath)
+	dlTasker.IsNotCover = r.isNotCover
 	err := dlTasker.Exec()
 	return err
 }
@@ -95,6 +97,7 @@ func init() {
 	rootCmd.Flags().StringVarP(&rootCommand.outputDir, "output-dir", "d", pwd, "保存目录。默认为当前目录")
 	rootCmd.Flags().StringVarP(&rootCommand.outputPath, "output-path", "o", "", "保存地址。覆盖已存在文件，优先级比 --output-dir 高")
 	rootCmd.Flags().BoolVarP(&rootCommand.IsShowProcess, "process", "p", false, "仅展示已下载的进度")
+	rootCmd.Flags().BoolVarP(&rootCommand.isNotCover, "not-cover", "", false, "是否不要覆盖本地文件，当 --path 有值时生效")
 	rootCmd.Flags().StringArrayVarP(&rootCommand.headers, "header", "H", []string{}, "携带的头信息")
 	rootCmd.PersistentFlags().BoolVarP(&rootCommand.isVerbose, "verbose", "v", false, "打印赘余信息")
 }

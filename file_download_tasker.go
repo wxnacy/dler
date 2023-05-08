@@ -49,6 +49,7 @@ type FileDownloadTasker struct {
 	OutputFunc OutputFunc
 	Out        io.Writer
 	Request    *Request
+	IsNotCover bool
 
 	contentLength int
 	segmentSize   int
@@ -90,6 +91,9 @@ func (d *FileDownloadTasker) Build() error {
 		}
 	}
 	d.buildDownloadPath()
+	if d.IsNotCover && d.downloadPath != "" && tools.FileExists(d.GetDownloadPath()) {
+		return ErrFileExists
+	}
 	// 检查下载地址是否合法
 	downloadDir := filepath.Dir(d.downloadPath)
 	if !tools.DirExists(downloadDir) {
