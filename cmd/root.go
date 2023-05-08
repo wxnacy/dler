@@ -24,6 +24,7 @@ type RootCommand struct {
 	outputDir     string
 	IsShowProcess bool
 	isNotCover    bool
+	isToM3u8      bool
 	headers       []string
 	isVerbose     bool
 }
@@ -61,10 +62,16 @@ func (r *RootCommand) Run(args []string) error {
 		r.url = args[0]
 	}
 	r.init()
-	dlTasker := dler.NewFileDownloadTasker(r.url).
+	var dlTasker dler.IDLTasker
+	fdlTasker := dler.NewFileDownloadTasker(r.url).
 		SetDownloadDir(r.outputDir).
-		SetDownloadPath(r.outputPath)
-	dlTasker.IsNotCover = r.isNotCover
+		SetDownloadPath(r.outputPath).
+		SetNotCover(r.isNotCover)
+	dlTasker = fdlTasker
+	if r.isToM3u8 {
+		dlTasker = dler.NewM3U8DownloadTasker(fdlTasker)
+	}
+
 	err := dlTasker.Exec()
 	return err
 }
@@ -98,6 +105,7 @@ func init() {
 	rootCmd.Flags().StringVarP(&rootCommand.outputPath, "output-path", "o", "", "保存地址。覆盖已存在文件，优先级比 --output-dir 高")
 	rootCmd.Flags().BoolVarP(&rootCommand.IsShowProcess, "process", "p", false, "仅展示已下载的进度")
 	rootCmd.Flags().BoolVarP(&rootCommand.isNotCover, "not-cover", "", false, "是否不要覆盖本地文件，当 --path 有值时生效")
+	rootCmd.Flags().BoolVarP(&rootCommand.isToM3u8, "to-m3u8", "", false, "下载为 m3u8 文件")
 	rootCmd.Flags().StringArrayVarP(&rootCommand.headers, "header", "H", []string{}, "携带的头信息")
 	rootCmd.PersistentFlags().BoolVarP(&rootCommand.isVerbose, "verbose", "v", false, "打印赘余信息")
 }

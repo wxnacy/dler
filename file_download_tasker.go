@@ -207,3 +207,8 @@ func (d *FileDownloadTasker) SetCacheDir(dir string) *FileDownloadTasker {
 	d.cacheDir = filepath.Join(dir, d.id)
 	return d
 }
+
+func (d *FileDownloadTasker) SetNotCover(flag bool) *FileDownloadTasker {
+	d.IsNotCover = flag
+	return d
+}
