@@ -11,7 +11,6 @@ import (
 	"github.com/grafov/m3u8"
 	"github.com/wxnacy/go-tasker"
 	"github.com/wxnacy/go-tools"
-	"github.com/wxnacy/gotool"
 )
 
 func NewM3U8DownloadTasker(fdlTasker *FileDownloadTasker) *M3U8DownloadTasker {
@@ -119,7 +118,7 @@ func (m *M3U8DownloadTasker) saveM3U8(mediaPlaylist *m3u8.MediaPlaylist) error {
 	if !strings.HasSuffix(path, ".m3u8") {
 		path += ".m3u8"
 	}
-	err = gotool.DirExistsOrCreate(m.GetDownloadPath())
+	err = tools.DirExistsOrCreate(m.GetDownloadPath())
 	if err != nil {
 		return err
 	}
