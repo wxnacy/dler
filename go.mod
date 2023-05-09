@@ -3,18 +3,17 @@ module github.com/wxnacy/dler
 go 1.20
 
 require (
-	github.com/cheggaaa/pb/v3 v3.1.2
 	github.com/grafov/m3u8 v0.11.1
 	github.com/imroc/req/v3 v3.33.2
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/spf13/cobra v1.7.0
 	github.com/wxnacy/go-tasker v0.0.5
-	github.com/wxnacy/go-tools v0.0.7
-	github.com/wxnacy/gotool v0.0.4
+	github.com/wxnacy/go-tools v0.0.8
 )
 
 require (
 	github.com/VividCortex/ewma v1.2.0 // indirect
+	github.com/cheggaaa/pb/v3 v3.1.2 // indirect
 	github.com/fatih/color v1.15.0 // indirect
 	github.com/go-task/slim-sprig v0.0.0-20230315185526-52ccab3ef572 // indirect
 	github.com/golang/mock v1.6.0 // indirect
