@@ -78,8 +78,9 @@ func (r *RootCommand) Run(args []string) error {
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "dler",
-	Short: "文件下载器",
+	Use:     "dler",
+	Short:   "文件下载器",
+	Version: dler.Version,
 	Example: `  dler https://example.com/index.html				下载文件到当前目录
   dler https://example.com/index.html -o ~/Downloads/dler.html	下载文件到指定文件
   dler https://example.com/index.html -d ~/Downloads		下载文件到指定目录
