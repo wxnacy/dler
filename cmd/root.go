@@ -80,9 +80,16 @@ func (r *RootCommand) Run(args []string) error {
 var rootCmd = &cobra.Command{
 	Use:   "dler",
 	Short: "文件下载器",
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
+	Example: `  dler https://example.com/index.html				下载文件到当前目录
+  dler https://example.com/index.html -o ~/Downloads/dler.html	下载文件到指定文件
+  dler https://example.com/index.html -d ~/Downloads		下载文件到指定目录
+  dler https://example.com/index.m3u8 --to-m3u8			将文件作为 m3u8 下载到本地
+`,
 	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) == 0 {
+			cmd.Help()
+			return
+		}
 		err := rootCommand.Run(args)
 		if err != nil {
 			fmt.Printf("Error: %v\n", err)
