@@ -60,7 +60,6 @@ func (m *M3U8DownloadTasker) BuildTasks() error {
 		key := medias.Key
 		if key != nil {
 			m.AddUrlTask(key.URI)
-
 			_URI, err := tools.URLParse(key.URI)
 			if err != nil {
 				return err
@@ -76,7 +75,6 @@ func (m *M3U8DownloadTasker) BuildTasks() error {
 			}
 			// 添加下载片段
 			m.AddUrlTask(seg.URI)
-
 			_URI, err := tools.URLParse(seg.URI)
 			if err != nil {
 				return err
@@ -143,9 +141,13 @@ func (m M3U8DownloadTasker) RunTask(task *tasker.Task) error {
 }
 
 func (m *M3U8DownloadTasker) AddUrlTask(uri string) {
-	m.AddTask(&tasker.Task{Info: M3U8DownloadTaskInfo{
-		Url: m.formatURI(uri), Path: m.formatPath(uri),
-	}})
+	path := m.formatPath(uri)
+	var done bool
+	if tools.FileExists(path) {
+		done = true
+	}
+	info := M3U8DownloadTaskInfo{Url: m.formatURI(uri), Path: path}
+	m.AddTask(tasker.NewTask(info, done))
 }
 
 func (m *M3U8DownloadTasker) formatURI(uri string) string {

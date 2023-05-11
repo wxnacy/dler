@@ -160,6 +160,10 @@ func (d *FileDownloadTasker) Exec() error {
 	return err
 }
 
+func (d *FileDownloadTasker) GetProgress() (float64, error) {
+	return tasker.GetTaskerProgress(d)
+}
+
 // 获取下载地址
 func (d *FileDownloadTasker) GetDownloadPath() string {
 	// 优先使用 outputPath
@@ -210,5 +214,15 @@ func (d *FileDownloadTasker) SetCacheDir(dir string) *FileDownloadTasker {
 
 func (d *FileDownloadTasker) SetNotCover(flag bool) *FileDownloadTasker {
 	d.IsNotCover = flag
+	return d
+}
+
+func (d *FileDownloadTasker) SetRequest(req *Request) *FileDownloadTasker {
+	d.Request = req
+	return d
+}
+
+func (d *FileDownloadTasker) SetProxyURL(url string) *FileDownloadTasker {
+	d.Request.Client.SetProxyURL(url)
 	return d
 }
