@@ -12,6 +12,8 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/wxnacy/dler"
+	"github.com/wxnacy/go-tasker"
+	"github.com/wxnacy/go-tools"
 )
 
 var (
@@ -19,14 +21,14 @@ var (
 )
 
 type RootCommand struct {
-	url           string
-	outputPath    string
-	outputDir     string
-	IsShowProcess bool
-	isNotCover    bool
-	isToM3u8      bool
-	headers       []string
-	isVerbose     bool
+	url            string
+	outputPath     string
+	outputDir      string
+	isShowProgress bool
+	isNotCover     bool
+	isToM3u8       bool
+	headers        []string
+	isVerbose      bool
 }
 
 func (r RootCommand) GetHeaders() map[string]string {
@@ -67,11 +69,25 @@ func (r *RootCommand) Run(args []string) error {
 		SetDownloadDir(r.outputDir).
 		SetDownloadPath(r.outputPath).
 		SetNotCover(r.isNotCover)
+
+	// 展示完成进度
+	if r.isShowProgress {
+		var itasker tasker.ITasker
+		itasker = fdlTasker
+		if r.isToM3u8 {
+			itasker = dler.NewM3U8DownloadTasker(fdlTasker)
+		}
+		p, err := tasker.GetTaskerProgress(itasker)
+		if err != nil {
+			return err
+		}
+		fmt.Println(tools.FormatFloat(p, 2))
+		return nil
+	}
 	dlTasker = fdlTasker
 	if r.isToM3u8 {
 		dlTasker = dler.NewM3U8DownloadTasker(fdlTasker)
 	}
-
 	err := dlTasker.Exec()
 	return err
 }
@@ -111,7 +127,7 @@ func init() {
 	pwd, _ := os.Getwd()
 	rootCmd.Flags().StringVarP(&rootCommand.outputDir, "output-dir", "d", pwd, "保存目录。默认为当前目录")
 	rootCmd.Flags().StringVarP(&rootCommand.outputPath, "output-path", "o", "", "保存地址。覆盖已存在文件，优先级比 --output-dir 高")
-	rootCmd.Flags().BoolVarP(&rootCommand.IsShowProcess, "process", "p", false, "仅展示已下载的进度")
+	rootCmd.Flags().BoolVarP(&rootCommand.isShowProgress, "progress", "p", false, "仅展示已下载的进度")
 	rootCmd.Flags().BoolVarP(&rootCommand.isNotCover, "not-cover", "", false, "是否不要覆盖本地文件，当 --path 有值时生效")
 	rootCmd.Flags().BoolVarP(&rootCommand.isToM3u8, "to-m3u8", "", false, "下载为 m3u8 文件")
 	rootCmd.Flags().StringArrayVarP(&rootCommand.headers, "header", "H", []string{}, "携带的头信息")
