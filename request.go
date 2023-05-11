@@ -15,34 +15,34 @@ func GetGlobalRequst() *Request {
 }
 
 func NewRequest() *Request {
-	client := req.C().SetTimeout(5 * time.Second)
-	return &Request{client: client}
+	Client := req.C().SetTimeout(5 * time.Second)
+	return &Request{Client: Client}
 
 }
 
 type Request struct {
-	client    *req.Client
+	Client    *req.Client
 	isVerbose bool
 }
 
 func (r *Request) SetHeader(key, value string) *Request {
-	r.client.SetCommonHeader(key, value)
+	r.Client.SetCommonHeader(key, value)
 	return r
 }
 
 func (r *Request) SetHeaders(hds map[string]string) *Request {
-	r.client.SetCommonHeaders(hds)
+	r.Client.SetCommonHeaders(hds)
 	return r
 }
 
 func (r *Request) EnableVerbose() *Request {
 	r.isVerbose = true
-	r.client.DevMode().EnableDumpAllWithoutBody()
+	r.Client.DevMode().EnableDumpAllWithoutBody()
 	return r
 }
 
 func (r *Request) GetBytes(url string) ([]byte, error) {
-	resp, err := r.client.R().Get(url)
+	resp, err := r.Client.R().Get(url)
 	err = r.checkResponse(resp, err)
 	if err != nil {
 		return resp.Bytes(), err
@@ -51,7 +51,7 @@ func (r *Request) GetBytes(url string) ([]byte, error) {
 }
 
 func (r *Request) GetBytesByRange(url string, start, end int) ([]byte, error) {
-	resp, err := r.client.R().
+	resp, err := r.Client.R().
 		SetHeader("Range", fmt.Sprintf("bytes=%d-%d", start, end)).Get(url)
 	err = r.checkResponse(resp, err)
 	if err != nil {
@@ -61,7 +61,7 @@ func (r *Request) GetBytesByRange(url string, start, end int) ([]byte, error) {
 }
 
 func (r *Request) Head(url string) (http.Header, error) {
-	resp, err := r.client.R().Head(url)
+	resp, err := r.Client.R().Head(url)
 	err = r.checkResponse(resp, err)
 	if err != nil {
 		return resp.Header, err
