@@ -1,7 +1,9 @@
 package dler
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 
@@ -39,6 +41,14 @@ func (r *Request) EnableVerbose() *Request {
 	r.isVerbose = true
 	r.Client.DevMode().EnableDumpAllWithoutBody()
 	return r
+}
+
+func (r *Request) GetReader(url string) (io.Reader, error) {
+	b, err := r.GetBytes(url)
+	if err != nil {
+		return nil, err
+	}
+	return bytes.NewReader(b), nil
 }
 
 func (r *Request) GetBytes(url string) ([]byte, error) {
