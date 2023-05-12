@@ -145,7 +145,7 @@ func (d FileDownloadTasker) RunTask(task *tasker.Task) error {
 
 func (d *FileDownloadTasker) BeforeRun() error {
 	tools.DirExistsOrCreate(d.cacheDir)
-	out := fmt.Sprintf("下载地址: %s", d.GetDownloadPath())
+	out := fmt.Sprintf("保存地址: %s", d.GetDownloadPath())
 	d.OutputFunc(d.Out, out)
 	return nil
 }
