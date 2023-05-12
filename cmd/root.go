@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/grafov/m3u8"
 	"github.com/spf13/cobra"
 	"github.com/wxnacy/dler"
 	"github.com/wxnacy/go-tasker"
@@ -29,6 +30,7 @@ type RootCommand struct {
 	isToM3u8       bool
 	headers        []string
 	isVerbose      bool
+	downloadIndex  int
 }
 
 func (r RootCommand) GetHeaders() map[string]string {
@@ -40,21 +42,13 @@ func (r RootCommand) GetHeaders() map[string]string {
 	return headers
 }
 
-func (r *RootCommand) init() error {
+func (r *RootCommand) check() error {
 	isUrl, err := regexp.MatchString("^http.*", r.url)
 	if err != nil {
 		return err
 	}
 	if !isUrl {
 		return fmt.Errorf("%s 不符合 URL 标准", r.url)
-	}
-	if r.isVerbose {
-		dler.GetGlobalRequst().EnableVerbose()
-	}
-	// 设置 headers
-	headers := r.GetHeaders()
-	if len(headers) > 0 {
-		dler.GetGlobalRequst().SetHeaders(headers)
 	}
 	return nil
 }
@@ -63,30 +57,40 @@ func (r *RootCommand) Run(args []string) error {
 	if len(args) > 0 {
 		r.url = args[0]
 	}
-	r.init()
+	r.check()
 	var dlTasker dler.IDLTasker
+	var itasker tasker.ITasker
 	fdlTasker := dler.NewFileDownloadTasker(r.url).
 		SetDownloadDir(r.outputDir).
 		SetDownloadPath(r.outputPath).
 		SetNotCover(r.isNotCover)
+	// 开启赘余输出
+	if r.isVerbose {
+		fdlTasker.Request.EnableVerbose()
+	}
+	// 设置 headers
+	headers := r.GetHeaders()
+	if len(headers) > 0 {
+		fdlTasker.Request.SetHeaders(headers)
+	}
 
+	dlTasker = fdlTasker
+	itasker = fdlTasker
+	if r.isToM3u8 {
+		mdlTasker := dler.NewM3U8DownloadTasker(fdlTasker).SetFilterMediaFunc(func(variants []*m3u8.Variant) *m3u8.Variant {
+			return variants[r.downloadIndex]
+		})
+		dlTasker = mdlTasker
+		itasker = mdlTasker
+	}
 	// 展示完成进度
 	if r.isShowProgress {
-		var itasker tasker.ITasker
-		itasker = fdlTasker
-		if r.isToM3u8 {
-			itasker = dler.NewM3U8DownloadTasker(fdlTasker)
-		}
 		p, err := tasker.GetTaskerProgress(itasker)
 		if err != nil {
 			return err
 		}
 		fmt.Println(tools.FormatFloat(p, 2))
 		return nil
-	}
-	dlTasker = fdlTasker
-	if r.isToM3u8 {
-		dlTasker = dler.NewM3U8DownloadTasker(fdlTasker)
 	}
 	err := dlTasker.Exec()
 	return err
@@ -130,6 +134,7 @@ func init() {
 	rootCmd.Flags().BoolVarP(&rootCommand.isShowProgress, "progress", "p", false, "仅展示已下载的进度")
 	rootCmd.Flags().BoolVarP(&rootCommand.isNotCover, "not-cover", "", false, "是否不要覆盖本地文件，当 --path 有值时生效")
 	rootCmd.Flags().BoolVarP(&rootCommand.isToM3u8, "to-m3u8", "", false, "下载为 m3u8 文件")
+	rootCmd.Flags().IntVarP(&rootCommand.downloadIndex, "index", "i", 0, "当出现下载列表时，需要下载的索引")
 	rootCmd.Flags().StringArrayVarP(&rootCommand.headers, "header", "H", []string{}, "携带的头信息")
 	rootCmd.PersistentFlags().BoolVarP(&rootCommand.isVerbose, "verbose", "v", false, "打印赘余信息")
 }
