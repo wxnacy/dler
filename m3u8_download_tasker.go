@@ -13,9 +13,15 @@ import (
 	"github.com/wxnacy/go-tools"
 )
 
+// 定义获取视频源的方法
+type FilterMediaFunc func(v []*m3u8.Variant) *m3u8.Variant
+
 func NewM3U8DownloadTasker(fdlTasker *FileDownloadTasker) *M3U8DownloadTasker {
 	return &M3U8DownloadTasker{
 		FileDownloadTasker: fdlTasker,
+		filterMediaFunc: func(variants []*m3u8.Variant) *m3u8.Variant {
+			return variants[0]
+		},
 	}
 }
 
@@ -26,8 +32,18 @@ type M3U8DownloadTaskInfo struct {
 
 type M3U8DownloadTasker struct {
 	*FileDownloadTasker
-	m3u8PlayList m3u8.Playlist
-	m3u8ListType m3u8.ListType
+	m3u8PlayList    m3u8.Playlist
+	m3u8ListType    m3u8.ListType
+	downloadRawUrl  string // 真正下载的地址
+	downloadURL     *tools.URL
+	filterMediaFunc FilterMediaFunc
+}
+
+// 选择下载地址
+// 只有当给定地址为 playlist 时才会生效
+func (m *M3U8DownloadTasker) SetFilterMediaFunc(fn FilterMediaFunc) *M3U8DownloadTasker {
+	m.filterMediaFunc = fn
+	return m
 }
 
 func (m *M3U8DownloadTasker) Build() error {
@@ -36,15 +52,32 @@ func (m *M3U8DownloadTasker) Build() error {
 	if err != nil {
 		return err
 	}
-	// 解析 m3u8 文件
-	reader, err := GetReaderFromURI(m.RawURL)
+	m.downloadRawUrl = m.RawURL
+	m.downloadURL = m.URL
+	// 解析给定 m3u8 文件
+	m3u8PlayList, m3u8ListType, err := m.parseM3U8(m.RawURL)
 	if err != nil {
 		return err
 	}
-	m.m3u8PlayList, m.m3u8ListType, err = m3u8.DecodeFrom(reader, true)
+	// 判定文件是否为视频列表，并过滤
+	switch m3u8ListType {
+	case m3u8.MASTER:
+		medias := m3u8PlayList.(*m3u8.MasterPlaylist)
+		v := m.filterMediaFunc(medias.Variants)
+		// 重新设置 downloadRawUrl
+		m.downloadRawUrl = m.formatURI(v.URI)
+		m.downloadURL, err = tools.URLParse(m.downloadRawUrl)
+		if err != nil {
+			return err
+		}
+	}
+	// 解析视频 m3u8 文件
+	m.m3u8PlayList, m.m3u8ListType, err = m.parseM3U8(m.downloadRawUrl)
 	if err != nil {
 		return err
 	}
+	out := fmt.Sprintf("下载地址: %s", m.downloadRawUrl)
+	m.OutputFunc(m.Out, out)
 	return err
 }
 
@@ -56,7 +89,7 @@ func (m *M3U8DownloadTasker) BuildTasks() error {
 	switch m.m3u8ListType {
 	case m3u8.MEDIA:
 		medias := m.m3u8PlayList.(*m3u8.MediaPlaylist)
-
+		// 解析 key
 		key := medias.Key
 		if key != nil {
 			m.AddUrlTask(key.URI)
@@ -69,6 +102,7 @@ func (m *M3U8DownloadTasker) BuildTasks() error {
 			}
 		}
 
+		// 解析 ts 文件
 		for _, seg := range medias.Segments {
 			if seg == nil {
 				continue
@@ -87,7 +121,6 @@ func (m *M3U8DownloadTasker) BuildTasks() error {
 		if err != nil {
 			return err
 		}
-
 	}
 	return nil
 }
@@ -124,6 +157,8 @@ func (m *M3U8DownloadTasker) saveM3U8(mediaPlaylist *m3u8.MediaPlaylist) error {
 }
 
 func (m *M3U8DownloadTasker) BeforeRun() error {
+	out := fmt.Sprintf("保存地址: %s", m.GetDownloadPath())
+	m.OutputFunc(m.Out, out)
 	return nil
 }
 
@@ -142,6 +177,7 @@ func (m M3U8DownloadTasker) RunTask(task *tasker.Task) error {
 
 func (m *M3U8DownloadTasker) AddUrlTask(uri string) {
 	path := m.formatPath(uri)
+	// 设置任务是否已经完成
 	var done bool
 	if tools.FileExists(path) {
 		done = true
@@ -154,13 +190,25 @@ func (m *M3U8DownloadTasker) formatURI(uri string) string {
 	if strings.HasPrefix(uri, "http") {
 		return uri
 	} else if strings.HasPrefix(uri, "/") {
-		return m.URL.Homepage + uri
+		return m.downloadURL.Homepage + uri
 	}
-	return fmt.Sprintf("%s/%s", m.URL.Dir, uri)
+	return fmt.Sprintf("%s/%s", m.downloadURL.Dir, uri)
 }
 
 func (m *M3U8DownloadTasker) formatPath(uri string) string {
 	return filepath.Join(m.GetDownloadPath(), filepath.Base(uri))
+}
+
+func (m *M3U8DownloadTasker) parseM3U8(uri string) (p m3u8.Playlist, l m3u8.ListType, err error) {
+	reader, err := m.Request.GetReader(uri)
+	if err != nil {
+		return
+	}
+	p, l, err = m3u8.DecodeFrom(reader, true)
+	if err != nil {
+		return
+	}
+	return
 }
 
 func (d *M3U8DownloadTasker) Exec() error {
