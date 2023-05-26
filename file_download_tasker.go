@@ -51,16 +51,17 @@ type FileDownloadTasker struct {
 	Request    *Request
 	IsNotCover bool
 
-	contentLength int
-	segmentSize   int
-	to            string
-	isSync        bool // 是否同步执行
-	cacheDir      string
-	id            string
-	filename      string
-	outputDir     string // 手动置顶的保存目录
-	outputPath    string // 手动指定的保存地址，优先级比 dir 高
-	downloadPath  string
+	contentLength  int
+	segmentSize    int
+	isMultiProcess bool // 是否多进程下载
+	to             string
+	isSync         bool // 是否同步执行
+	cacheDir       string
+	id             string
+	filename       string
+	outputDir      string // 手动置顶的保存目录
+	outputPath     string // 手动指定的保存地址，优先级比 dir 高
+	downloadPath   string
 }
 
 func (d *FileDownloadTasker) Build() error {
@@ -76,9 +77,11 @@ func (d *FileDownloadTasker) Build() error {
 		return err
 	}
 	d.contentLength, err = strconv.Atoi(headers.Get("content-length"))
-	if err != nil {
-		return err
+	// 获取 contentLength 没有报错时自动使用多进程下载
+	if err == nil {
+		d.isMultiProcess = true
 	}
+	// 获取头信息中可能包含的文件名
 	disposition := headers.Get("Content-Disposition")
 	if disposition != "" {
 		_, params, err := mime.ParseMediaType(disposition)
@@ -105,6 +108,9 @@ func (d *FileDownloadTasker) Build() error {
 func (d *FileDownloadTasker) AfterRun() error {
 	// 写入总文件
 	defer os.RemoveAll(d.cacheDir)
+	if !d.isMultiProcess {
+		return nil
+	}
 	sources := make([]string, 0)
 	for _, task := range d.GetTasks() {
 		info := task.Info.(FileDownloadTaskInfo)
@@ -114,6 +120,11 @@ func (d *FileDownloadTasker) AfterRun() error {
 }
 
 func (d *FileDownloadTasker) BuildTasks() error {
+	// 单进程下载文件
+	if !d.isMultiProcess {
+		d.AddTask(&tasker.Task{Info: FileDownloadTaskInfo{Path: d.GetDownloadPath()}})
+		return nil
+	}
 	length := d.contentLength
 	page := int(length/d.segmentSize) + 1
 	for i := 0; i < page; i++ {
@@ -136,7 +147,13 @@ func (d *FileDownloadTasker) BuildTasks() error {
 
 func (d FileDownloadTasker) RunTask(task *tasker.Task) error {
 	info := task.Info.(FileDownloadTaskInfo)
-	bytes, err := d.Request.GetBytesByRange(d.RawURL, info.RangeStart, info.RangeEnd)
+	var bytes []byte
+	var err error
+	if d.isMultiProcess {
+		bytes, err = d.Request.GetBytesByRange(d.RawURL, info.RangeStart, info.RangeEnd)
+	} else {
+		bytes, err = d.Request.GetBytes(d.RawURL)
+	}
 	if err != nil {
 		return err
 	}
@@ -152,6 +169,9 @@ func (d *FileDownloadTasker) BeforeRun() error {
 
 func (d *FileDownloadTasker) Exec() error {
 	begin := time.Now()
+	if !d.isMultiProcess {
+		d.isSync = true
+	}
 	err := tasker.ExecTasker(d, d.isSync)
 	if err == nil {
 		out := fmt.Sprintf("下载完成，耗时：%v", time.Now().Sub(begin))
