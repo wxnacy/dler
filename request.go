@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"net/http"
 	"time"
 
 	"github.com/imroc/req/v3"
@@ -70,16 +69,16 @@ func (r *Request) GetBytesByRange(url string, start, end int) ([]byte, error) {
 	return resp.Bytes(), nil
 }
 
-func (r *Request) Head(url string) (http.Header, error) {
+func (r *Request) Head(url string) (*req.Response, error) {
 	resp, err := r.Client.R().Head(url)
 	err = r.checkResponse(resp, err)
 	if err != nil {
-		return resp.Header, err
+		return resp, err
 	}
 	if r.isVerbose {
 		fmt.Printf("%s Header: %s", url, resp.HeaderToString())
 	}
-	return resp.Header, nil
+	return resp, nil
 }
 
 func (r *Request) checkResponse(resp *req.Response, err error) error {

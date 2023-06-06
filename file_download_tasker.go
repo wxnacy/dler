@@ -72,10 +72,11 @@ func (d *FileDownloadTasker) Build() error {
 		return err
 	}
 	// 获取头信息
-	headers, err := d.Request.Head(d.RawURL)
+	headResp, err := d.Request.Head(d.RawURL)
 	if err != nil {
 		return err
 	}
+	headers := headResp.Header
 	d.contentLength, err = strconv.Atoi(headers.Get("content-length"))
 	// 获取 contentLength 没有报错时自动使用多进程下载
 	if err == nil {
