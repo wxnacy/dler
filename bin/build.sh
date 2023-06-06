@@ -7,4 +7,5 @@ then
     bin_name=dler-${bname}
 fi
 
-cd cmd/dler && go build && mv dler $(go env GOPATH)/bin/$bin_name && cd --
+# cd cmd/dler && go build && mv dler $(go env GOPATH)/bin/$bin_name && cd --
+cd cmd/dler && go build && mv dler $(go env GOPATH)/bin && cd --
