@@ -264,5 +264,5 @@ func (d *FileDownloadTasker) SetRequest(req *Request) *FileDownloadTasker {
 
 func (d *FileDownloadTasker) SetProxyURL(url string) *FileDownloadTasker {
 	d.Request.Client.SetProxyURL(url)
-	return d}
-
+	return d
+}
