@@ -31,6 +31,7 @@ type RootCommand struct {
 	headers        []string
 	isVerbose      bool
 	downloadIndex  int
+	segmentSize    int
 }
 
 func (r RootCommand) GetHeaders() map[string]string {
@@ -73,6 +74,10 @@ func (r *RootCommand) Run(args []string) error {
 	if len(headers) > 0 {
 		fdlTasker.Request.SetHeaders(headers)
 	}
+	// 设置分片大小
+	if r.segmentSize > 0 {
+		fdlTasker.SetSegmentSize(r.segmentSize)
+	}
 
 	dlTasker = fdlTasker
 	itasker = fdlTasker
@@ -106,11 +111,8 @@ var rootCmd = &cobra.Command{
   dler https://example.com/index.html -d ~/Downloads		下载文件到指定目录
   dler https://example.com/index.m3u8 --to-m3u8			将文件作为 m3u8 下载到本地
 `,
+	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) == 0 {
-			cmd.Help()
-			return
-		}
 		err := rootCommand.Run(args)
 		if err != nil {
 			fmt.Printf("Error: %v\n", err)
@@ -136,5 +138,6 @@ func init() {
 	rootCmd.Flags().BoolVarP(&rootCommand.isToM3u8, "to-m3u8", "", false, "下载为 m3u8 文件")
 	rootCmd.Flags().IntVarP(&rootCommand.downloadIndex, "index", "i", 0, "当出现下载列表时，需要下载的索引")
 	rootCmd.Flags().StringArrayVarP(&rootCommand.headers, "header", "H", []string{}, "携带的头信息")
+	rootCmd.Flags().IntVarP(&rootCommand.segmentSize, "segment-size", "s", 0, "分片大小（字节），用于 range 下载")
 	rootCmd.PersistentFlags().BoolVarP(&rootCommand.isVerbose, "verbose", "v", false, "打印赘余信息")
 }

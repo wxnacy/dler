@@ -16,7 +16,16 @@ func GetGlobalRequst() *Request {
 }
 
 func NewRequest() *Request {
-	Client := req.C().SetTimeout(5 * time.Second)
+	Client := req.C().SetTimeout(30 * time.Second)
+	// 设置常见的浏览器头信息
+	Client.SetCommonHeaders(map[string]string{
+		"User-Agent":      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
+		"Accept":          "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+		"Accept-Language": "en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7",
+		"Accept-Encoding": "gzip, deflate, br",
+		"Cache-Control":   "no-cache",
+		"Pragma":          "no-cache",
+	})
 	return &Request{Client: Client}
 
 }
@@ -66,6 +75,14 @@ func (r *Request) GetBytesByRange(url string, start, end int) ([]byte, error) {
 	if err != nil {
 		return resp.Bytes(), err
 	}
+
+	// 检查服务器是否支持 Range 请求
+	contentRange := resp.Header.Get("Content-Range")
+	if contentRange == "" {
+		// 服务器不支持 Range 请求，回退到普通 GET 请求
+		return r.GetBytes(url)
+	}
+
 	return resp.Bytes(), nil
 }
 

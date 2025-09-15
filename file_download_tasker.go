@@ -158,11 +158,19 @@ func (d FileDownloadTasker) RunTask(task *tasker.Task) error {
 	if err != nil {
 		return err
 	}
+	// 确保目录存在
+	dir := filepath.Dir(info.Path)
+	if err := tools.DirExistsOrCreate(dir); err != nil {
+		return err
+	}
 	return os.WriteFile(info.Path, bytes, tools.PermFile)
 }
 
 func (d *FileDownloadTasker) BeforeRun() error {
-	tools.DirExistsOrCreate(d.cacheDir)
+	err := tools.DirExistsOrCreate(d.cacheDir)
+	if err != nil {
+		return err
+	}
 	out := fmt.Sprintf("保存地址: %s", d.GetDownloadPath())
 	d.OutputFunc(d.Out, out)
 	return nil
