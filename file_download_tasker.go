@@ -71,11 +71,22 @@ func (d *FileDownloadTasker) Build() error {
 	if err != nil {
 		return err
 	}
+
 	// 获取头信息
 	headResp, err := d.Request.Head(d.RawURL)
+	// 如果 HEAD 请求失败，尝试使用 GET 请求
 	if err != nil {
-		return err
+		if d.Request.isVerbose {
+			fmt.Printf("HEAD 请求失败，尝试使用 GET 请求: %v\n", err)
+		}
+		// 使用 GET 请求作为备选方案
+		getResp, err := d.Request.Client.R().Get(d.RawURL)
+		if err != nil {
+			return err
+		}
+		headResp = getResp
 	}
+
 	headers := headResp.Header
 	d.contentLength, err = strconv.Atoi(headers.Get("content-length"))
 	// 获取 contentLength 没有报错时自动使用多进程下载
@@ -253,5 +264,5 @@ func (d *FileDownloadTasker) SetRequest(req *Request) *FileDownloadTasker {
 
 func (d *FileDownloadTasker) SetProxyURL(url string) *FileDownloadTasker {
 	d.Request.Client.SetProxyURL(url)
-	return d
-}
+	return d}
+
