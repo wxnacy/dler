@@ -16,9 +16,7 @@ import (
 	"github.com/wxnacy/go-tools"
 )
 
-var (
-	rootCommand = &RootCommand{}
-)
+var rootCommand = &RootCommand{}
 
 type RootCommand struct {
 	url            string
@@ -130,7 +128,13 @@ func Execute() {
 
 func init() {
 	pwd, _ := os.Getwd()
-	rootCmd.Flags().StringVarP(&rootCommand.outputDir, "output-dir", "d", pwd, "保存目录。默认为当前目录")
+	// 从环境变量 DLER_OUTPUT_DIR 读取默认值，如果不存在则使用当前目录
+	outputDir := os.Getenv("DLER_OUTPUT_DIR")
+	if outputDir == "" {
+		outputDir = pwd
+	}
+
+	rootCmd.Flags().StringVarP(&rootCommand.outputDir, "output-dir", "d", outputDir, "保存目录。默认为当前目录")
 	rootCmd.Flags().StringVarP(&rootCommand.outputPath, "output-path", "o", "", "保存地址。覆盖已存在文件，优先级比 --output-dir 高")
 	rootCmd.Flags().BoolVarP(&rootCommand.isShowProgress, "progress", "p", false, "仅展示已下载的进度")
 	rootCmd.Flags().BoolVarP(&rootCommand.isNotCover, "not-cover", "", false, "是否不要覆盖本地文件，当 --path 有值时生效")
