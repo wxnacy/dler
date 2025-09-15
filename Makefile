@@ -114,17 +114,18 @@ build-darwin: ## 构建 macOS 二进制文件
 release: check tidy ## 发布新版本
 	@echo "当前版本: $(VERSION)"
 	@echo "正在创建并推送 Git 标签 v$(VERSION)..."
-	./scripts/release.sh
+	./scripts/version/release.sh
 
 # 递增版本号
 .PHONY: bump-version
 bump-version: ## 递增版本号
-	./scripts/bump-version.sh
+	./scripts/version/bump-version.sh
 
 # 显示当前版本
 .PHONY: version
 version: ## 显示当前版本号
 	@echo "当前版本: $(VERSION)"
+	@./scripts/version/show-version.sh
 
 # 运行程序
 .PHONY: run

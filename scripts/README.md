@@ -1,55 +1,50 @@
-# 版本管理脚本
+# 脚本目录
 
-这个目录包含了用于管理项目版本的脚本。
+这个目录包含了项目的各种脚本工具。
 
-## 脚本说明
+## 目录结构
 
-### 1. show-version.sh
-显示当前版本号和对应的 Git 标签。
-
-```bash
-./scripts/show-version.sh
+```
+scripts/
+├── README.md          # 本文件
+├── build.sh           # 构建脚本
+├── run.sh             # 运行脚本
+├── trans.sh           # 转换脚本
+└── version/           # 版本管理脚本
+    ├── bump-version.sh    # 版本递增脚本
+    ├── release.sh         # 版本发布脚本
+    └── show-version.sh    # 显示版本号脚本
 ```
 
-### 2. bump-version.sh
-递增版本号并更新 version.go 文件。
+## 使用说明
 
-```bash
-./scripts/bump-version.sh
-```
+### 构建和运行
+- `./scripts/build.sh` - 构建项目
+- `./scripts/run.sh` - 运行项目
 
-支持三种版本号递增方式：
-- 主版本号 (MAJOR) - 不兼容的API变更
-- 次版本号 (MINOR) - 向后兼容的功能性新增
-- 修订号 (PATCH) - 向后兼容的问题修正
-
-### 3. release.sh
-创建 Git 标签并推送到 GitHub。
-
-```bash
-./scripts/release.sh
-```
-
-## 使用流程
-
-1. 使用 `bump-version.sh` 更新版本号
-2. 提交版本号更改
-3. 使用 `release.sh` 创建并推送标签
-
-## 示例
+### 版本管理
+版本管理脚本已移至 `scripts/version/` 目录：
 
 ```bash
 # 查看当前版本
-./scripts/show-version.sh
+./scripts/version/show-version.sh
 
 # 递增版本号
-./scripts/bump-version.sh
+./scripts/version/bump-version.sh
 
-# 提交更改
-git add version.go
-git commit -m "Bump version to 0.8.1"
-git push origin dev_golang
+# 发布新版本（创建并推送 Git 标签）
+./scripts/version/release.sh
+```
 
-# 创建并推送标签
-./scripts/release.sh
+也可以使用 Makefile 命令：
+
+```bash
+# 查看当前版本
+make version
+
+# 递增版本号
+make bump-version
+
+# 发布新版本
+make release
 ```
