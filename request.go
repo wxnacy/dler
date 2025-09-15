@@ -2,6 +2,7 @@ package dler
 
 import (
 	"bytes"
+	"compress/gzip"
 	"fmt"
 	"io"
 	"time"
@@ -17,6 +18,7 @@ func GetGlobalRequst() *Request {
 
 func NewRequest() *Request {
 	Client := req.C().SetTimeout(30 * time.Second)
+
 	// 设置常见的浏览器头信息
 	Client.SetCommonHeaders(map[string]string{
 		"User-Agent":      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
@@ -27,7 +29,6 @@ func NewRequest() *Request {
 		"Pragma":          "no-cache",
 	})
 	return &Request{Client: Client}
-
 }
 
 type Request struct {
@@ -56,6 +57,12 @@ func (r *Request) GetReader(url string) (io.Reader, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// 添加调试信息
+	if r.isVerbose {
+		fmt.Printf("URL: %s\nContent (first 200 chars): %s\n", url, string(b)[:min(200, len(b))])
+	}
+
 	return bytes.NewReader(b), nil
 }
 
@@ -65,7 +72,34 @@ func (r *Request) GetBytes(url string) ([]byte, error) {
 	if err != nil {
 		return resp.Bytes(), err
 	}
-	return resp.Bytes(), nil
+
+	// 获取原始字节数据
+	rawBytes := resp.Bytes()
+
+	// 检查内容编码
+	contentEncoding := resp.Header.Get("Content-Encoding")
+	if contentEncoding == "gzip" {
+		// 手动解压 gzip 内容
+		gzipReader, err := gzip.NewReader(bytes.NewReader(rawBytes))
+		if err != nil {
+			return nil, fmt.Errorf("failed to create gzip reader: %v", err)
+		}
+		defer gzipReader.Close()
+
+		// 读取解压后的内容
+		decompressedBytes, err := io.ReadAll(gzipReader)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decompress gzip content: %v", err)
+		}
+
+		if r.isVerbose {
+			fmt.Printf("Decompressed content length: %d\n", len(decompressedBytes))
+		}
+
+		return decompressedBytes, nil
+	}
+
+	return rawBytes, nil
 }
 
 func (r *Request) GetBytesByRange(url string, start, end int) ([]byte, error) {
@@ -110,4 +144,12 @@ func (r *Request) checkResponse(resp *req.Response, err error) error {
 		return fmt.Errorf("%s: %v", url, resp.Err)
 	}
 	return nil
+}
+
+// 添加辅助函数
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }

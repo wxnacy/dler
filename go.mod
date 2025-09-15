@@ -7,7 +7,7 @@ require (
 	github.com/imroc/req/v3 v3.43.7
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/spf13/cobra v1.7.0
-	github.com/wxnacy/go-tasker v0.0.6
+	github.com/wxnacy/go-tasker v1.0.0
 	github.com/wxnacy/go-tools v0.0.9
 )
 
@@ -53,4 +53,4 @@ require (
 )
 
 // replace github.com/wxnacy/go-tools => ../gotool
-replace github.com/wxnacy/go-tasker => ../go-tasker
+// replace github.com/wxnacy/go-tasker => ../go-tasker
