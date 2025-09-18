@@ -18,6 +18,8 @@ GOGET := $(GO) get
 GOMOD := $(GO) mod
 GOFMT := $(GO) fmt
 GOVET := $(GO) vet
+GOPATH := $(shell go env GOPATH)
+GOBIN := $(GOPATH)/bin
 
 # 源文件目录
 MAIN_DIR := cmd/dler
@@ -31,6 +33,7 @@ LDFLAGS :=
 # 安装目录
 PREFIX ?= /usr/local
 BINDIR ?= $(PREFIX)/bin
+COMPLETION_DIR_ZSH ?= ~/.zsh/completions
 
 # 默认目标
 .DEFAULT_GOAL := help
@@ -50,8 +53,14 @@ build: ## 构建项目
 
 # 安装二进制文件
 .PHONY: install
-install: build ## 安装二进制文件到系统
-	install -m 755 $(BINARY_NAME) $(BINDIR)/$(BINARY_NAME)
+install: build ## 构建并安装二进制文件到 GOPATH
+	install -m 755 $(BINARY_NAME) $(GOBIN)/$(BINARY_NAME)
+
+# 安装自动补全脚本
+.PHONY: install-completion
+install-completion: ## 安装 zsh 自动补全脚本到用户目录
+	@echo "Installing zsh completion script to user directory..."
+	./scripts/completion/install_completion.sh
 
 # 清理构建文件
 .PHONY: clean
@@ -117,9 +126,9 @@ release: check tidy ## 发布新版本
 	./scripts/version/release.sh
 
 # 递增版本号
-.PHONY: bump-version
-bump-version: ## 递增版本号
-	./scripts/version/bump-version.sh
+.PHONY: incr-version
+incr-version: ## 递增版本号
+	./scripts/version/incr-version.sh
 
 # 显示当前版本
 .PHONY: version
@@ -129,8 +138,8 @@ version: ## 显示当前版本号
 
 # 运行程序
 .PHONY: run
-run: ## 运行程序
-	$(GO) run $(MAIN_PKG)
+run: ## 运行程序，使用方式: make run ARGS="your args"
+	$(GO) run $(MAIN_PKG) $(ARGS)
 
 # 运行程序（带参数）
 .PHONY: run-args
