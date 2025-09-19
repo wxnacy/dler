@@ -124,7 +124,7 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
         print_info "提交更改..."
         git commit -m "chore(version): Incr version to $NEW_VERSION"
 
-        print_info "推送到 dev_golang 分支..."
+        print_info "推送到当前远程分支..."
         gpush
 
         print_info "Git操作已完成!"
