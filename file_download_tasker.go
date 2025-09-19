@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/wxnacy/go-tasker"
@@ -157,7 +158,7 @@ func (d *FileDownloadTasker) BuildTasks() error {
 	return nil
 }
 
-func (d FileDownloadTasker) RunTask(task *tasker.Task) error {
+func (d *FileDownloadTasker) RunTask(task *tasker.Task) error {
 	info := task.Info.(FileDownloadTaskInfo)
 	var bytes []byte
 	var err error
@@ -169,6 +170,12 @@ func (d FileDownloadTasker) RunTask(task *tasker.Task) error {
 	if err != nil {
 		return err
 	}
+
+	// 检查返回的内容是否为空或错误信息
+	if len(bytes) == 0 {
+		return fmt.Errorf("received empty response from server")
+	}
+
 	// 确保目录存在
 	dir := filepath.Dir(info.Path)
 	if err := tools.DirExistsOrCreate(dir); err != nil {
@@ -212,6 +219,7 @@ func (d *FileDownloadTasker) GetDownloadPath() string {
 	}
 	return d.downloadPath
 }
+
 func (d *FileDownloadTasker) buildDownloadPath() {
 	// 优先使用 outputPath
 	if d.outputPath != "" {
@@ -229,7 +237,41 @@ func (d *FileDownloadTasker) buildDownloadPath() {
 	} else {
 		filename = filepath.Base(d.RawURL)
 	}
-	d.downloadPath = tools.FileAutoReDownloadName(filepath.Join(dir, filename))
+
+	// 确保路径不为空
+	fullPath := filepath.Join(dir, filename)
+	if fullPath == "" {
+		// 如果路径为空，使用默认路径
+		dir, _ := os.Getwd()
+		fullPath = filepath.Join(dir, "download")
+	}
+
+	// 自己实现文件名去重逻辑，避免使用可能有问题的 go-tools 包
+	d.downloadPath = d.getUniqueFileName(fullPath)
+}
+
+// getUniqueFileName 生成唯一的文件名，避免覆盖已存在的文件
+func (d *FileDownloadTasker) getUniqueFileName(basePath string) string {
+	if _, err := os.Stat(basePath); os.IsNotExist(err) {
+		// 文件不存在，直接返回
+		return basePath
+	}
+
+	// 文件存在，需要生成新的文件名
+	dir := filepath.Dir(basePath)
+	ext := filepath.Ext(basePath)
+	base := strings.TrimSuffix(filepath.Base(basePath), ext)
+
+	// 尝试添加数字后缀
+	for i := 1; i < 1000; i++ {
+		newPath := filepath.Join(dir, fmt.Sprintf("%s(%d)%s", base, i, ext))
+		if _, err := os.Stat(newPath); os.IsNotExist(err) {
+			return newPath
+		}
+	}
+
+	// 如果1000个都存在，就使用时间戳
+	return filepath.Join(dir, fmt.Sprintf("%s_%d%s", base, time.Now().Unix(), ext))
 }
 
 func (d *FileDownloadTasker) SetSegmentSize(s int) *FileDownloadTasker {
