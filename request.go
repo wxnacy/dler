@@ -19,15 +19,18 @@ func GetGlobalRequst() *Request {
 func NewRequest() *Request {
 	Client := req.C().SetTimeout(30 * time.Second)
 
-	// 设置常见的浏览器头信息
+	// 不设置User-Agent，让库使用默认的
 	Client.SetCommonHeaders(map[string]string{
-		"User-Agent":      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
 		"Accept":          "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
 		"Accept-Language": "en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7",
 		"Accept-Encoding": "gzip, deflate, br",
 		"Cache-Control":   "no-cache",
 		"Pragma":          "no-cache",
 	})
+
+	// 启用自动重定向，最多允许10次重定向
+	Client.SetRedirectPolicy(req.MaxRedirectPolicy(10))
+
 	return &Request{Client: Client}
 }
 
@@ -70,7 +73,7 @@ func (r *Request) GetBytes(url string) ([]byte, error) {
 	resp, err := r.Client.R().Get(url)
 	err = r.checkResponse(resp, err)
 	if err != nil {
-		return resp.Bytes(), err
+		return nil, err
 	}
 
 	// 获取原始字节数据
@@ -107,7 +110,7 @@ func (r *Request) GetBytesByRange(url string, start, end int) ([]byte, error) {
 		SetHeader("Range", fmt.Sprintf("bytes=%d-%d", start, end)).Get(url)
 	err = r.checkResponse(resp, err)
 	if err != nil {
-		return resp.Bytes(), err
+		return nil, err
 	}
 
 	// 检查服务器是否支持 Range 请求
@@ -134,6 +137,9 @@ func (r *Request) Head(url string) (*req.Response, error) {
 
 func (r *Request) checkResponse(resp *req.Response, err error) error {
 	url := resp.Request.URL.String()
+	if r.isVerbose {
+		fmt.Printf("检查响应: URL=%s, Error=%v, StatusCode=%d, IsError=%v\n", url, err, resp.StatusCode, resp.IsError())
+	}
 	if err != nil {
 		return fmt.Errorf("%s: %v", url, err)
 	}
