@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# bump-version.sh - 用于递增版本号的脚本
+# incr-version.sh - 用于递增版本号的脚本
 
-set -e  # 遇到错误时退出
+set -e # 遇到错误时退出
 
 # 颜色定义
 RED='\033[0;31m'
@@ -34,7 +34,7 @@ fi
 print_info "当前版本号: $CURRENT_VERSION"
 
 # 解析版本号
-IFS='.' read -ra VERSION_PARTS <<< "$CURRENT_VERSION"
+IFS='.' read -ra VERSION_PARTS <<<"$CURRENT_VERSION"
 MAJOR=${VERSION_PARTS[0]}
 MINOR=${VERSION_PARTS[1]}
 PATCH=${VERSION_PARTS[2]}
@@ -56,23 +56,23 @@ read -p "请输入选项 (1-4): " -n 1 -r
 echo
 
 case $REPLY in
-    1)
-        NEW_VERSION="$((MAJOR + 1)).0.0"
-        ;;
-    2)
-        NEW_VERSION="$MAJOR.$((MINOR + 1)).0"
-        ;;
-    3)
-        NEW_VERSION="$MAJOR.$MINOR.$((PATCH + 1))"
-        ;;
-    4)
-        print_info "已取消操作"
-        exit 0
-        ;;
-    *)
-        print_error "无效选项"
-        exit 1
-        ;;
+1)
+    NEW_VERSION="$((MAJOR + 1)).0.0"
+    ;;
+2)
+    NEW_VERSION="$MAJOR.$((MINOR + 1)).0"
+    ;;
+3)
+    NEW_VERSION="$MAJOR.$MINOR.$((PATCH + 1))"
+    ;;
+4)
+    print_info "已取消操作"
+    exit 0
+    ;;
+*)
+    print_error "无效选项"
+    exit 1
+    ;;
 esac
 
 print_info "新版本号: $NEW_VERSION"
@@ -103,8 +103,37 @@ echo "  到: $NEW_VERSION"
 echo ""
 print_info "请记得提交更改:"
 echo "  git add version.go"
-echo "  git commit -m \"Bump version to $NEW_VERSION\""
-echo "  git push origin dev_golang"
+echo "  git commit -m \"chore(version): Incr version to $NEW_VERSION\""
+echo "  gpush"
 echo ""
 print_info "然后运行发布脚本:"
 echo "  ./bin/release.sh"
+
+# 询问是否自动执行git命令
+echo ""
+read -p "是否自动执行git提交和推送操作? (y/N): " -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    print_info "正在执行git操作..."
+
+    # 检查是否有未提交的更改
+    if ! git diff --quiet version.go || ! git diff --cached --quiet version.go; then
+        print_info "添加 version.go 到暂存区..."
+        git add version.go
+
+        print_info "提交更改..."
+        git commit -m "chore(version): Incr version to $NEW_VERSION"
+
+        print_info "推送到 dev_golang 分支..."
+        gpush
+
+        print_info "Git操作已完成!"
+    else
+        print_warning "version.go 文件没有更改，无需提交"
+    fi
+else
+    print_info "请手动执行以下命令提交更改:"
+    echo "  git add version.go"
+    echo "  git commit -m \"chore(version): Incr version to $NEW_VERSION\""
+    echo "  gpush"
+fi
